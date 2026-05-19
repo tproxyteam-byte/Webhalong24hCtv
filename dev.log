@@ -1,0 +1,23 @@
+
+> websale@0.1.0 dev
+> next dev -p 3003
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3003
+- Network:       http://192.168.1.3:3003
+- Environments: .env.local
+✓ Ready in 757ms
+
+[browser] Uncaught Error: Internal Next.js error: Router action dispatched before initialization.
+    at dispatchAppRouterAction (file://D:/web sale/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:916:37)
+    at <unknown> (file://D:/web sale/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:11823:61)
+    at startTransition (file://D:/web sale/.next/dev/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:1279:31)
+    at Object.hmrRefresh (file://D:/web sale/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:11822:40)
+    at <unknown> (file://D:/web sale/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13990:64)
+    at startTransition (file://D:/web sale/.next/dev/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:1279:31)
+    at processMessage (file://D:/web sale/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13989:44)
+    at WebSocket.handleMessage (file://D:/web sale/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13358:52)
+ GET / 200 in 1183ms (next.js: 536ms, application-code: 646ms)
+ GET /property/a0805-bim-24-tang 200 in 2.3s (next.js: 1826ms, generate-params: 776ms, application-code: 452ms)
+ GET / 200 in 157ms (next.js: 8ms, application-code: 149ms)
+[?25h
