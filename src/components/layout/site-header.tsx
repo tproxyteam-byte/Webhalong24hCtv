@@ -20,22 +20,22 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
     toast(label, { description: "Tính năng đang phát triển." });
 
   return (
-    <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/80 backdrop-blur-md shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
       <div className="mx-auto flex h-16 max-w-[1800px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-1.5">
+        <Link href="/" className="flex shrink-0 items-center gap-1.5 group">
           {showBack && (
-            <span aria-hidden className="mr-1 text-neutral-500">
+            <span aria-hidden className="mr-1 text-neutral-500 transition-transform group-hover:-translate-x-0.5">
               ←
             </span>
           )}
           <span className="text-base font-semibold tracking-tight text-neutral-900 sm:text-lg">
             Webhalong24h
           </span>
-          <span className="rounded-md bg-[var(--color-booked-bg)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-booked-fg)]">
+          <span className="rounded-md bg-gradient-to-r from-teal-600 to-teal-700 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm">
             Sale
           </span>
           {subtitle && (
-            <span className="ml-3 hidden truncate text-sm text-neutral-500 lg:inline">
+            <span className="ml-3 hidden max-w-[200px] truncate text-sm font-medium text-neutral-400 lg:inline">
               · {subtitle}
             </span>
           )}
@@ -46,7 +46,7 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
           type="button"
           onClick={openPalette}
           aria-label="Tìm căn nhanh"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-50 text-neutral-500 transition-colors hover:bg-neutral-100 sm:h-10 sm:w-auto sm:max-w-2xl sm:flex-1 sm:gap-2 sm:rounded-full sm:border sm:border-neutral-200 sm:px-4 sm:text-sm sm:hover:bg-white sm:hover:border-neutral-300"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-50 text-neutral-500 transition-all hover:bg-neutral-100 sm:h-10 sm:w-auto sm:max-w-2xl sm:flex-1 sm:gap-2.5 sm:rounded-xl sm:border sm:border-neutral-200/80 sm:bg-white sm:px-4 sm:text-sm sm:shadow-sm sm:hover:border-teal-300 sm:hover:bg-white sm:hover:shadow-[0_4px_12px_rgba(13,148,136,0.05)]"
         >
           <svg
             aria-hidden
@@ -54,7 +54,7 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
             height="16"
             viewBox="0 0 16 16"
             fill="none"
-            className="shrink-0 text-neutral-400"
+            className="shrink-0 text-teal-600"
           >
             <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
             <path
@@ -64,10 +64,10 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
               strokeLinecap="round"
             />
           </svg>
-          <span className="hidden flex-1 truncate text-left sm:inline">
+          <span className="hidden flex-1 truncate text-left text-neutral-400 font-medium sm:inline">
             Tìm theo tên căn, tòa nhà, địa chỉ…
           </span>
-          <kbd className="hidden h-5 shrink-0 items-center rounded border border-neutral-200 bg-white px-1.5 font-mono text-[10px] font-medium text-neutral-500 sm:inline-flex">
+          <kbd className="hidden h-5 shrink-0 items-center rounded-md border border-neutral-200 bg-neutral-50 px-1.5 font-mono text-[9px] font-semibold text-neutral-400 sm:inline-flex">
             {isMac ? "⌘" : "Ctrl"} + K
           </kbd>
         </button>
@@ -114,18 +114,18 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
             </IconButton>
           </div>
 
-          <div className="ml-1 flex items-center gap-2 rounded-full bg-white p-1 sm:border sm:border-neutral-200 sm:pr-3">
+          <div className="ml-1 flex items-center gap-2 rounded-full bg-white p-1 pr-1.5 sm:border sm:border-neutral-200/80 sm:pr-3.5 shadow-sm">
             <span
               aria-hidden
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900 text-xs font-semibold text-white"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-teal-700 to-indigo-900 text-xs font-semibold text-white shadow-sm"
             >
               MA
             </span>
-            <div className="hidden flex-col items-start leading-tight sm:flex">
-              <span className="text-[10px] uppercase tracking-wider text-neutral-400">
+            <div className="hidden flex-col items-start leading-none sm:flex">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
                 Xin chào,
               </span>
-              <span className="text-sm font-semibold text-neutral-900">
+              <span className="mt-0.5 text-xs font-bold text-neutral-800">
                 Minh Anh
               </span>
             </div>

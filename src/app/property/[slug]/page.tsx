@@ -45,40 +45,40 @@ export default async function PropertyDetailPage({ params }: PageProps) {
       <SiteHeader showBack subtitle={property.name} />
       <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-neutral-500">
-          <Link href="/" className="transition-colors hover:text-neutral-900">
+        <nav className="flex items-center gap-1.5 text-xs text-neutral-500 font-medium">
+          <Link href="/" className="transition-colors hover:text-teal-700">
             Danh sách căn
           </Link>
           <span aria-hidden className="text-neutral-300">
             /
           </span>
-          <span className="text-neutral-700">{property.building}</span>
+          <span className="text-neutral-800 font-semibold">{property.building}</span>
         </nav>
 
         {/* Title block */}
         <div className="mt-3 flex flex-col gap-3 sm:mt-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           <div className="min-w-0">
-            <h1 className="text-h1">{property.name}</h1>
-            <p className="mt-1.5 text-sm text-neutral-600">{property.address}</p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-neutral-800 sm:text-3xl">{property.name}</h1>
+            <p className="mt-1.5 text-sm font-medium text-neutral-500">{property.address}</p>
           </div>
           <div className="shrink-0 sm:text-right">
-            <p className="text-[11px] uppercase tracking-wider text-neutral-400">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
               Giá CTV từ
             </p>
-            <p className="text-2xl font-semibold tracking-tight text-neutral-900 tnum">
+            <p className="text-2xl font-bold tracking-tight text-teal-800 tnum">
               {formatVND(minPrice)}
-              <span className="ml-1 text-sm font-normal text-neutral-500">/đêm</span>
+              <span className="ml-1 text-xs font-semibold text-neutral-500">/đêm</span>
             </p>
           </div>
         </div>
 
         {/* Gallery */}
-        <div className="mt-6">
+        <div className="mt-6 shadow-sm rounded-2xl overflow-hidden">
           <PropertyGallery images={property.images} alt={property.name} />
         </div>
 
         {/* Meta row */}
-        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-neutral-200 py-4 text-sm">
+        <div className="mt-6 flex flex-wrap items-center gap-3 border-y border-neutral-200/60 py-5 text-sm">
           <Meta
             label="Phòng ngủ"
             value={property.bedrooms === 0 ? "Studio" : `${property.bedrooms} PN`}
@@ -87,29 +87,29 @@ export default async function PropertyDetailPage({ params }: PageProps) {
           <Meta label="Diện tích" value={`${property.floorArea} m²`} />
           <Meta label="Tối đa" value={`${property.maxGuests} khách`} />
           <Meta
-            label="Trống 30 ngày tới"
+            label="Trống 30 ngày"
             value={`${availNights} đêm`}
             highlight={availNights > 0}
           />
         </div>
 
         {/* Two column layout */}
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-12">
-          <div className="flex flex-col gap-12 min-w-0">
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px] lg:gap-10">
+          <div className="flex flex-col gap-10 min-w-0">
             <section>
-              <h2 className="text-h2">Mô tả</h2>
-              <p className="mt-3 text-[0.9375rem] leading-relaxed text-neutral-700">
+              <h2 className="text-lg font-bold text-neutral-800">Mô tả</h2>
+              <p className="mt-3 text-[14px] leading-relaxed text-neutral-600 font-medium">
                 {property.description}
               </p>
             </section>
 
             <section>
-              <h2 className="text-h2">Tiện nghi</h2>
-              <ul className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              <h2 className="text-lg font-bold text-neutral-800">Tiện nghi</h2>
+              <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {property.amenities.map((a) => (
                   <li
                     key={a}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700"
+                    className="flex items-center gap-2 rounded-xl border border-neutral-200/50 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 shadow-sm"
                   >
                     <CheckIcon />
                     {a}
@@ -119,29 +119,28 @@ export default async function PropertyDetailPage({ params }: PageProps) {
             </section>
 
             <section>
-              <div className="flex items-end justify-between gap-3">
-                <h2 className="text-h2">Lịch 3 tháng tới</h2>
-                <p className="text-sm text-neutral-500">
+              <div className="flex items-end justify-between gap-3 border-b border-neutral-100 pb-3">
+                <h2 className="text-lg font-bold text-neutral-800">Lịch trống 3 tháng tới</h2>
+                <p className="text-xs text-neutral-500 font-medium">
                   Còn{" "}
-                  <span className="font-semibold text-neutral-900">{availNights}</span>{" "}
+                  <span className="font-bold text-teal-700">{availNights}</span>{" "}
                   đêm trống / 30 ngày
                 </p>
               </div>
               <div className="mt-4">
                 <AvailabilityCalendar bookings={property.bookings} today={today} />
               </div>
-
             </section>
 
             {property.ownerNote && (
-              <section className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
-                <h3 className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+              <section className="rounded-2xl border border-teal-100 bg-gradient-to-tr from-teal-50/20 to-neutral-50/30 p-5 shadow-sm">
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-teal-700">
                   Ghi chú từ chủ nhà
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-neutral-800">
-                  {property.ownerNote}
+                <p className="mt-2 text-sm leading-relaxed text-neutral-700 font-medium">
+                  "{property.ownerNote}"
                 </p>
-                <p className="mt-3 text-xs text-neutral-500">
+                <p className="mt-4 text-xs font-semibold text-neutral-400">
                   — {property.ownerName} · Cập nhật{" "}
                   {relativeTime(property.updatedAt)}
                 </p>
@@ -151,39 +150,39 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
           {/* Sticky pricing column */}
           <aside className="lg:sticky lg:top-24 lg:self-start">
-            <div className="flex flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-5">
+            <div className="flex flex-col gap-6 rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-md shadow-neutral-100">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                   Giá CTV (sau chiết khấu)
                 </p>
-                <p className="mt-1 text-xs text-neutral-500">
-                  Chiết khấu {Math.round(property.pricing.ctvDiscount * 100)}% so với
-                  giá niêm yết
+                <p className="mt-1 text-xs text-neutral-500 font-medium leading-relaxed">
+                  Chiết khấu <span className="font-bold text-teal-600">{Math.round(property.pricing.ctvDiscount * 100)}%</span> so với
+                  giá niêm yết của chủ nhà
                 </p>
               </div>
-              <dl className="flex flex-col gap-2 text-sm">
-                <PriceRow label="CN – T5" value={formatVND(ctvWeekday)} />
-                <PriceRow label="T6, T7" value={formatVND(ctvWeekend)} />
+              <dl className="flex flex-col gap-3 text-sm border-t border-b border-neutral-100 py-4 font-semibold text-neutral-700">
+                <PriceRow label="Ngày thường (CN – T5)" value={formatVND(ctvWeekday)} />
+                <PriceRow label="Cuối tuần (T6, T7)" value={formatVND(ctvWeekend)} />
                 {property.pricing.holiday && (
                   <PriceRow
-                    label="Lễ tết"
+                    label="Ngày Lễ tết"
                     value={formatVND(Math.round(property.pricing.holiday * factor))}
                   />
                 )}
               </dl>
 
-              <div className="flex flex-col gap-2 border-t border-neutral-200 pt-4">
+              <div className="flex flex-col gap-2.5">
                 <ShareButton slug={property.slug} name={property.name} />
                 <a
                   href="tel:0987654321"
-                  className="btn btn-primary w-full"
+                  className="btn btn-primary w-full shadow-md shadow-teal-950/10 text-center"
                   aria-label={`Gọi chủ nhà ${property.ownerName}`}
                 >
                   Gọi {property.ownerName}
                 </a>
               </div>
 
-              <p className="text-center text-xs text-neutral-500">
+              <p className="text-center text-[10px] font-semibold text-neutral-400">
                 Cập nhật {relativeTime(property.updatedAt)}
               </p>
             </div>
@@ -205,11 +204,11 @@ function Meta({
   highlight?: boolean;
 }) {
   return (
-    <div className="flex items-baseline gap-1.5">
-      <span className="text-xs text-neutral-500">{label}</span>
+    <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400">{label}</span>
       <span
         className={
-          "font-semibold " + (highlight ? "text-neutral-900" : "text-neutral-800")
+          "text-[13px] font-extrabold " + (highlight ? "text-teal-700" : "text-neutral-800")
         }
       >
         {value}
@@ -229,11 +228,11 @@ function PriceRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <dt className={muted ? "text-neutral-500" : "text-neutral-700"}>{label}</dt>
+      <dt className={muted ? "text-neutral-500 font-medium" : "text-neutral-500 font-semibold"}>{label}</dt>
       <dd
         className={
-          "font-medium tabular-nums " +
-          (muted ? "text-neutral-500" : "text-neutral-900")
+          "font-bold tabular-nums " +
+          (muted ? "text-neutral-500" : "text-teal-800")
         }
       >
         {value}
@@ -250,12 +249,12 @@ function CheckIcon() {
       viewBox="0 0 14 14"
       fill="none"
       aria-hidden
-      className="shrink-0 text-neutral-400"
+      className="shrink-0 text-teal-600"
     >
       <path
         d="M2.5 7.5L5.5 10.5L11.5 4"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

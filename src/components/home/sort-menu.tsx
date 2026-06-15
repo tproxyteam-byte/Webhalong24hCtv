@@ -53,11 +53,12 @@ export function SortMenu({ value, onChange }: SortMenuProps) {
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
+        data-active={!isDefault ? "true" : undefined}
         className={
-          "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm transition-colors " +
+          "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm transition-all shadow-sm " +
           (isDefault
             ? "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 hover:text-neutral-900"
-            : "border-neutral-900 bg-white text-neutral-900 hover:bg-neutral-50")
+            : "border-teal-600 bg-teal-50/10 text-teal-800 hover:bg-teal-50/20")
         }
       >
         <svg
@@ -66,7 +67,7 @@ export function SortMenu({ value, onChange }: SortMenuProps) {
           viewBox="0 0 14 14"
           fill="none"
           aria-hidden
-          className="text-neutral-500"
+          className={isDefault ? "text-neutral-500" : "text-teal-600"}
         >
           <path
             d="M2 4h10M3.5 7h7M5 10h4"
@@ -75,13 +76,13 @@ export function SortMenu({ value, onChange }: SortMenuProps) {
             strokeLinecap="round"
           />
         </svg>
-        <span className="font-medium">Sắp xếp</span>
+        <span className="font-semibold">Sắp xếp</span>
         {!isDefault && (
           <>
-            <span aria-hidden className="text-neutral-300">
+            <span aria-hidden className="text-teal-300">
               ·
             </span>
-            <span className="font-medium">{current.label}</span>
+            <span className="font-semibold text-teal-900">{current.label}</span>
           </>
         )}
         <svg
@@ -90,7 +91,7 @@ export function SortMenu({ value, onChange }: SortMenuProps) {
           height="10"
           viewBox="0 0 10 10"
           fill="none"
-          className={"transition-transform " + (open ? "rotate-180" : "")}
+          className={"transition-transform " + (open ? "rotate-180" : "") + (isDefault ? " text-neutral-400" : " text-teal-600")}
         >
           <path
             d="M2 4l3 3 3-3"
@@ -104,7 +105,7 @@ export function SortMenu({ value, onChange }: SortMenuProps) {
       {open && (
         <div
           role="menu"
-          className="animate-popover absolute right-0 top-full z-40 mt-1.5 min-w-[220px] overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-[var(--shadow-pop)]"
+          className="animate-popover absolute right-0 top-full z-40 mt-1.5 min-w-[220px] overflow-hidden rounded-xl border border-neutral-200/80 bg-white p-1.5 shadow-[var(--shadow-pop)]"
         >
           <ul className="py-1">
             {SORT_OPTIONS.map((opt) => {
@@ -118,9 +119,9 @@ export function SortMenu({ value, onChange }: SortMenuProps) {
                       setOpen(false);
                     }}
                     className={
-                      "flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-neutral-100 " +
+                      "flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-neutral-100 " +
                       (isSelected
-                        ? "text-neutral-900 font-medium"
+                        ? "text-teal-900 font-bold bg-teal-50/50"
                         : "text-neutral-700")
                     }
                   >
@@ -132,7 +133,7 @@ export function SortMenu({ value, onChange }: SortMenuProps) {
                         viewBox="0 0 14 14"
                         fill="none"
                         aria-hidden
-                        className="shrink-0 text-neutral-900"
+                        className="shrink-0 text-teal-600"
                       >
                         <path
                           d="M2.5 7.5L5.5 10.5L11.5 4"

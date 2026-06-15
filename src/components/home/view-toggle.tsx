@@ -12,7 +12,7 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
     <div
       role="tablist"
       aria-label="Chế độ xem"
-      className="inline-flex h-9 items-center rounded-lg border border-neutral-200 bg-neutral-50 p-0.5"
+      className="inline-flex h-9 items-center rounded-lg border border-neutral-200/80 bg-neutral-100/70 p-0.5"
     >
       <ToggleButton active={value === "matrix"} onClick={() => onChange("matrix")}>
         <GridIcon />
@@ -42,10 +42,10 @@ function ToggleButton({
       aria-selected={active}
       onClick={onClick}
       className={
-        "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-colors " +
+        "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-all " +
         (active
-          ? "bg-white text-neutral-900 shadow-sm ring-1 ring-neutral-200"
-          : "text-neutral-500 hover:text-neutral-900")
+          ? "bg-white text-teal-800 shadow-[0_2px_6px_rgba(13,148,136,0.06)] ring-1 ring-neutral-200/50"
+          : "text-neutral-500 hover:text-neutral-800")
       }
     >
       {children}

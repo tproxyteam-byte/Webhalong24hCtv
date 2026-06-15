@@ -110,6 +110,7 @@ export function HomeFilters({
           label="Khu vực"
           value={areaValue}
           isOpen={open === "area"}
+          isActive={filters.area !== "all"}
           onToggle={() => setOpen(open === "area" ? null : "area")}
         >
           <OptionsList
@@ -130,6 +131,7 @@ export function HomeFilters({
           label="Loại phòng"
           value={bedroomValue}
           isOpen={open === "bedroom"}
+          isActive={filters.bedroom !== "all"}
           onToggle={() => setOpen(open === "bedroom" ? null : "bedroom")}
         >
           <OptionsList
@@ -147,6 +149,7 @@ export function HomeFilters({
           label="Tiện ích"
           value={amenityValue}
           isOpen={open === "amenity"}
+          isActive={featureItems.some((item) => filters.quickAmenities.includes(item.id))}
           onToggle={() => setOpen(open === "amenity" ? null : "amenity")}
         >
           <MultiCheckList
@@ -161,6 +164,7 @@ export function HomeFilters({
           label="View"
           value={viewValue}
           isOpen={open === "view"}
+          isActive={viewItems.some((item) => filters.quickAmenities.includes(item.id))}
           onToggle={() => setOpen(open === "view" ? null : "view")}
         >
           <MultiCheckList
@@ -175,6 +179,7 @@ export function HomeFilters({
           label="Giá CTV"
           value={priceValue}
           isOpen={open === "price"}
+          isActive={filters.priceMax !== 0}
           onToggle={() => setOpen(open === "price" ? null : "price")}
         >
           <OptionsList
@@ -248,6 +253,7 @@ function FilterCard({
   value,
   isOpen,
   onToggle,
+  isActive = false,
   children,
 }: {
   icon: React.ReactNode;
@@ -255,6 +261,7 @@ function FilterCard({
   value: string;
   isOpen: boolean;
   onToggle: () => void;
+  isActive?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -263,18 +270,23 @@ function FilterCard({
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="filter-card"
+        data-active={isActive ? "true" : undefined}
+        className="filter-card relative data-[active=true]:border-teal-600 data-[active=true]:bg-teal-50/10 data-[active=true]:shadow-sm"
       >
-        <span className="filter-icon">{icon}</span>
+        <span className="filter-icon" style={isActive ? { color: "var(--color-accent-700)" } : undefined}>{icon}</span>
         <span className="filter-text">
           <span className="filter-label">{label}</span>
-          <span className="filter-value">{value}</span>
+          <span className="filter-value" style={isActive ? { color: "var(--color-accent-900)" } : undefined}>{value}</span>
         </span>
+        {isActive && (
+          <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-teal-600 shadow-sm animate-pulse" />
+        )}
         <svg
           className="filter-chev"
           viewBox="0 0 10 10"
           fill="none"
           aria-hidden
+          style={isActive ? { color: "var(--color-accent-700)" } : undefined}
         >
           <path
             d="M2 4l3 3 3-3"
@@ -288,7 +300,7 @@ function FilterCard({
       {isOpen && (
         <div
           role="menu"
-          className="animate-popover absolute left-0 top-full z-40 mt-1.5 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-[var(--shadow-pop)]"
+          className="animate-popover absolute left-0 top-full z-40 mt-1.5 overflow-hidden rounded-xl border border-neutral-200/80 bg-white p-1.5 shadow-[var(--shadow-pop)]"
         >
           {children}
         </div>

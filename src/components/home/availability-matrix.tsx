@@ -100,13 +100,13 @@ export function AvailabilityMatrix({
   }, []);
 
   return (
-    <div className="matrix-root w-fit max-w-full overflow-hidden rounded-xl border border-neutral-200 bg-white">
+    <div className="matrix-root w-fit max-w-full overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.04)]">
       <div ref={scrollRef} className="overflow-x-auto scrollbar-thin">
         <div className="w-fit">
           {/* Month band */}
-          <div className="flex h-9 border-b border-neutral-200 bg-white">
-            <div className="sticky left-0 z-20 flex w-[var(--prop-w)] shrink-0 items-end border-r border-neutral-200 bg-white px-3 pb-1.5 sm:px-4">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+          <div className="flex h-9 border-b border-neutral-200 bg-neutral-50/80">
+            <div className="sticky left-0 z-20 flex w-[var(--prop-w)] shrink-0 items-end border-r border-neutral-200 bg-neutral-50 px-3 pb-1.5 sm:px-4">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                 Căn hộ
               </span>
             </div>
@@ -119,35 +119,35 @@ export function AvailabilityMatrix({
                 }
                 style={{ width: `calc(var(--cell-w) * ${g.span})` }}
               >
-                <span className="px-3 text-sm font-semibold text-neutral-900">
+                <span className="px-3 text-xs font-bold uppercase tracking-wider text-neutral-600">
                   {g.label}
                 </span>
               </div>
             ))}
-            <div className="sticky right-0 z-20 flex w-[var(--price-w)] shrink-0 items-end justify-center border-l border-neutral-200 bg-white pb-1.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+            <div className="sticky right-0 z-20 flex w-[var(--price-w)] shrink-0 items-end justify-center border-l border-neutral-200 bg-neutral-50 pb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                 Giá CTV / đêm
               </span>
             </div>
           </div>
 
           {/* Day-of-week + date header row */}
-          <div className="flex h-12 border-b border-neutral-200 bg-white">
-            <div className="sticky left-0 z-20 flex w-[var(--prop-w)] shrink-0 items-center justify-between border-r border-neutral-200 bg-white px-3 sm:px-4">
-              <span className="text-[11px] text-neutral-400">
-                <span className="font-semibold text-neutral-700 tnum">
+          <div className="flex h-12 border-b border-neutral-200 bg-neutral-50/50">
+            <div className="sticky left-0 z-20 flex w-[var(--prop-w)] shrink-0 items-center justify-between border-r border-neutral-200 bg-neutral-50 px-3 sm:px-4">
+              <span className="text-[11px] text-neutral-400 font-medium">
+                <span className="font-bold text-teal-700 tnum">
                   {properties.length}
                 </span>{" "}
                 căn
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-neutral-300">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
                 Tuần
               </span>
             </div>
             {dayInfos.map((d) => (
               <DayHeader key={d.iso} info={d} />
             ))}
-            <div className="sticky right-0 z-20 flex w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-white">
+            <div className="sticky right-0 z-20 flex w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-neutral-50">
               <PriceColHeader label="Thường" />
               <PriceColHeader label="T6, T7" />
               <PriceColHeader label="Lễ" />
@@ -162,13 +162,13 @@ export function AvailabilityMatrix({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-700">
-        <span className="font-semibold text-neutral-900">Chú thích:</span>
-        <LegendItem status="avail" sampleDay={3} label="Trống — ngày thường" />
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-neutral-200/80 bg-neutral-50/60 px-4 py-3.5 text-xs text-neutral-600">
+        <span className="font-bold text-neutral-800">Chú thích:</span>
+        <LegendItem status="avail" sampleDay={3} label="Trống ngày thường" />
         <LegendItem
           status="avail-weekend"
           sampleDay={7}
-          label="Trống — T6, T7"
+          label="Trống T6, T7"
         />
         <LegendItem status="hold" sampleDay={12} label="Đang giữ chỗ" />
         <LegendItem status="booked" sampleDay={15} label="Đã đặt" />
@@ -264,31 +264,31 @@ function MatrixRow({
     : null;
 
   return (
-    <div className="group/row flex border-b border-neutral-200 last:border-b-0 hover:bg-neutral-50/40">
-      <div className="sticky left-0 z-10 flex w-[var(--prop-w)] shrink-0 items-center gap-2 border-r border-neutral-200 bg-white px-2 py-1.5 transition-colors group-hover/row:bg-neutral-50 sm:gap-2.5 sm:px-2.5 sm:py-2">
+    <div className="group/row flex border-b border-neutral-100 last:border-b-0 hover:bg-accent-50">
+      <div className="sticky left-0 z-10 flex w-[var(--prop-w)] shrink-0 items-center gap-2 border-r border-neutral-200 bg-white px-2 py-1.5 transition-colors group-hover/row:bg-accent-50 sm:gap-2.5 sm:px-2.5 sm:py-2">
         <Link
           href={`/property/${property.slug}`}
-          className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md bg-neutral-100 sm:h-10 sm:w-10"
+          className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md bg-neutral-100 sm:h-10 sm:w-10 ring-1 ring-neutral-200/50"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cover}
             alt={property.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover/row:scale-105"
             loading="lazy"
           />
         </Link>
         <div className="min-w-0 flex-1 leading-tight">
           <Link
             href={`/property/${property.slug}`}
-            className="block truncate text-[13px] font-semibold text-neutral-900 hover:underline"
+            className="block truncate text-[13px] font-semibold text-neutral-800 hover:text-teal-700 hover:underline"
           >
             {property.name}
           </Link>
-          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-neutral-500">
+          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-neutral-500 font-medium">
             {viewLabel && (
               <>
-                <span className="font-medium text-emerald-700">{viewLabel}</span>
+                <span className="font-semibold text-teal-600">{viewLabel}</span>
                 <span className="text-neutral-300">·</span>
               </>
             )}
@@ -308,7 +308,7 @@ function MatrixRow({
         <DayCell key={d.iso} info={d} property={property} />
       ))}
 
-      <div className="sticky right-0 z-10 flex w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-white transition-colors group-hover/row:bg-neutral-50">
+      <div className="sticky right-0 z-10 flex w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-white transition-colors group-hover/row:bg-accent-50">
         <PriceCell value={ctvWeekday} bold />
         <PriceCell value={ctvWeekend} />
         <PriceCell value={ctvHoliday} />
@@ -404,7 +404,7 @@ function FavoriteButton({ id, name }: { id: string; name: string }) {
         e.stopPropagation();
         setActive((v) => !v);
       }}
-      className="heart-btn"
+      className="heart-btn transition-transform active:scale-95"
       data-active={active}
       aria-label={active ? `Bỏ yêu thích ${name}` : `Yêu thích ${name}`}
       aria-pressed={active}
@@ -414,12 +414,13 @@ function FavoriteButton({ id, name }: { id: string; name: string }) {
         width="14"
         height="14"
         viewBox="0 0 20 20"
-        fill={active ? "currentColor" : "none"}
+        fill={active ? "var(--color-booked-fg)" : "none"}
+        stroke={active ? "var(--color-booked-fg)" : "currentColor"}
         aria-hidden
+        className="transition-colors duration-200"
       >
         <path
           d="M10 17s-6.5-3.6-6.5-8.2A3.3 3.3 0 0 1 10 6a3.3 3.3 0 0 1 6.5 2.8C16.5 13.4 10 17 10 17z"
-          stroke="currentColor"
           strokeWidth="1.5"
           strokeLinejoin="round"
         />
