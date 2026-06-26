@@ -5,21 +5,19 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { PropertyGallery } from "@/components/property/property-gallery";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { ShareButton } from "@/components/property/share-button";
-import { getPropertyBySlug, SAMPLE_PROPERTIES } from "@/lib/sample-properties";
+import { getPropertyDetail } from "@/lib/api";
 import { countAvailableNights, minCtvPriceNext30Days } from "@/lib/calendar";
 import { formatVND, relativeTime, todayISO } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export function generateStaticParams() {
-  return SAMPLE_PROPERTIES.map((p) => ({ slug: p.slug }));
-}
-
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const property = getPropertyBySlug(slug);
+  const property = await getPropertyDetail(slug);
   if (!property) return { title: "Căn không tồn tại — Webhalong24h Sale" };
   return {
     title: `${property.name} — ${property.building} | Webhalong24h Sale`,
@@ -30,10 +28,10 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function PropertyDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const property = getPropertyBySlug(slug);
+  const today = todayISO();
+  const property = await getPropertyDetail(slug);
   if (!property) notFound();
 
-  const today = todayISO();
   const minPrice = minCtvPriceNext30Days(property.pricing, today);
   const availNights = countAvailableNights(property.bookings, today, 30);
   const factor = 1 - property.pricing.ctvDiscount;

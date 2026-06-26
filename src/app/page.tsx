@@ -1,14 +1,15 @@
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { HomeView } from "@/components/home/home-view";
-import { SAMPLE_PROPERTIES, listAreas } from "@/lib/sample-properties";
-import { todayISO } from "@/lib/format";
+import { getProperties } from "@/lib/api";
+import { addDays, todayISO } from "@/lib/format";
 
-export default function HomePage() {
-  // TODO: thay bằng `GET /properties/sale` từ NestJS BE
-  const properties = SAMPLE_PROPERTIES;
-  const areas = listAreas();
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
   const today = todayISO();
+  const properties = await getProperties(today, addDays(today, 90));
+  const areas = Array.from(new Set(properties.map((p) => p.area))).sort();
 
   // Updated label "HH:mm DD/MM/YYYY"
   const now = new Date();
