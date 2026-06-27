@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Property } from "@/lib/types";
 import { dayStatus } from "@/lib/calendar";
-import { addDays, formatShortDate } from "@/lib/format";
+import { addDays, formatShortDate, formatCompactVND } from "@/lib/format";
 
 function formatVNDPlain(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
@@ -87,8 +87,33 @@ export function AvailabilityMatrix({
   const months = groupByMonth(dayInfos);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, scrollLeft: 0 });
+
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollLeft = 0;
+    if (scrollRef.current) {
+      scrollRef.current.style.scrollBehavior = "auto";
+      scrollRef.current.scrollLeft = 0;
+    }
+
+    // Perform a subtle scroll bounce animation to show scrollability
+    const timer1 = setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.style.scrollBehavior = "smooth";
+        scrollRef.current.scrollLeft = 60; // scroll right
+      }
+    }, 450);
+
+    const timer2 = setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollLeft = 0; // scroll back
+      }
+    }, 1150);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [startDate]);
 
   useEffect(() => {
@@ -99,9 +124,56 @@ export function AvailabilityMatrix({
     return () => window.removeEventListener(MATRIX_JUMP_TODAY_EVENT, onJump);
   }, []);
 
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (
+      target.closest("a") ||
+      target.closest("button") ||
+      target.closest("svg") ||
+      target.closest("path")
+    ) {
+      return;
+    }
+
+    setIsDragging(true);
+    if (scrollRef.current) {
+      dragStart.current = {
+        x: e.pageX,
+        scrollLeft: scrollRef.current.scrollLeft,
+      };
+      scrollRef.current.style.cursor = "grabbing";
+      scrollRef.current.style.scrollBehavior = "auto";
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX;
+    const walk = (x - dragStart.current.x) * 1.5; // speed factor
+    scrollRef.current.scrollLeft = dragStart.current.scrollLeft - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (scrollRef.current) {
+      scrollRef.current.style.cursor = "grab";
+      scrollRef.current.style.scrollBehavior = "smooth";
+    }
+  };
+
   return (
     <div className="matrix-root w-fit max-w-full overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.04)]">
-      <div ref={scrollRef} className="overflow-x-auto scrollbar-thin">
+      <div
+        ref={scrollRef}
+        className="overflow-x-auto scrollbar-thin cursor-grab select-none active:cursor-grabbing"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUpOrLeave}
+        onMouseLeave={handleMouseUpOrLeave}
+      >
         <div className="w-fit">
           {/* Month band */}
           <div className="flex h-9 border-b border-neutral-200 bg-neutral-50/80">
@@ -124,7 +196,7 @@ export function AvailabilityMatrix({
                 </span>
               </div>
             ))}
-            <div className="sticky right-0 z-20 flex w-[var(--price-w)] shrink-0 items-end justify-center border-l border-neutral-200 bg-neutral-50 pb-1.5">
+            <div className="hidden sm:flex sticky right-0 z-20 w-[var(--price-w)] shrink-0 items-end justify-center border-l border-neutral-200 bg-neutral-50 pb-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                 Giá CTV / đêm
               </span>
@@ -147,7 +219,7 @@ export function AvailabilityMatrix({
             {dayInfos.map((d) => (
               <DayHeader key={d.iso} info={d} />
             ))}
-            <div className="sticky right-0 z-20 flex w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-neutral-50">
+            <div className="hidden sm:flex sticky right-0 z-20 w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-neutral-50">
               <PriceColHeader label="Thường" />
               <PriceColHeader label="T6, T7" />
               <PriceColHeader label="Lễ" />
@@ -300,6 +372,10 @@ function MatrixRow({
               {property.maxGuests}k
             </span>
           </p>
+          <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 sm:hidden">
+            {formatCompactVND(ctvWeekday)} / {formatCompactVND(ctvWeekend)}
+            {ctvHoliday ? ` / ${formatCompactVND(ctvHoliday)}` : ""}
+          </p>
         </div>
         <FavoriteButton id={property.id} name={property.name} />
       </div>
@@ -308,7 +384,7 @@ function MatrixRow({
         <DayCell key={d.iso} info={d} property={property} />
       ))}
 
-      <div className="sticky right-0 z-10 flex w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-white transition-colors group-hover/row:bg-accent-50">
+      <div className="hidden sm:flex sticky right-0 z-10 w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-white transition-colors group-hover/row:bg-accent-50">
         <PriceCell value={ctvWeekday} bold />
         <PriceCell value={ctvWeekend} />
         <PriceCell value={ctvHoliday} />
