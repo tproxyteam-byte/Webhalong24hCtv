@@ -246,20 +246,63 @@ function parsePropertyMetadata(p: any) {
 
 export async function getProperties(
   startDate?: string,
-  endDate?: string
-): Promise<Property[]> {
+  endDate?: string,
+  ownerId?: string
+): Promise<{
+  properties: Property[];
+  owner?: {
+    id: string;
+    name: string;
+    phone: string | null;
+    avatarUrl: string | null;
+  };
+  error?: string;
+}> {
   const start = startDate || todayISO();
   const end = endDate || addDays(start, 90);
 
+  let publicPropsList: any[] = [];
+  let ownerInfo: any = undefined;
+
   try {
-    const propsRes = await fetch("https://api.halong24h.com/properties/public", {
-      next: { revalidate: 60 },
-    });
-    if (!propsRes.ok) {
-      throw new Error(`Failed to fetch public properties: ${propsRes.statusText}`);
+    if (ownerId) {
+      try {
+        const ownerRes = await fetch(`https://api.halong24h.com/properties/public/by-owner/${ownerId}`, {
+          next: { revalidate: 60 },
+        });
+        if (!ownerRes.ok) {
+          return {
+            properties: [],
+            error: "Link không hợp lệ hoặc đã bị thu hồi",
+          };
+        }
+        const ownerJson = await ownerRes.json();
+        if (ownerJson.success && ownerJson.data) {
+          publicPropsList = ownerJson.data.items || [];
+          ownerInfo = ownerJson.data.owner || undefined;
+        } else {
+          return {
+            properties: [],
+            error: ownerJson.message || "Link không hợp lệ hoặc đã bị thu hồi",
+          };
+        }
+      } catch (err: any) {
+        console.error("Error loading properties by owner:", err);
+        return {
+          properties: [],
+          error: "Link không hợp lệ hoặc đã bị thu hồi",
+        };
+      }
+    } else {
+      const propsRes = await fetch("https://api.halong24h.com/properties/public", {
+        next: { revalidate: 60 },
+      });
+      if (!propsRes.ok) {
+        throw new Error(`Failed to fetch public properties: ${propsRes.statusText}`);
+      }
+      const propsJson = await propsRes.json();
+      publicPropsList = propsJson.data || [];
     }
-    const propsJson = await propsRes.json();
-    const publicPropsList: any[] = propsJson.data || [];
 
     const gridRes = await fetch(
       `https://api.halong24h.com/calendar/public-grid?startDate=${start}&endDate=${end}`,
@@ -279,51 +322,69 @@ export async function getProperties(
 
     const gridProps: ApiProperty[] = gridJson.data.properties;
 
-    return gridProps.map((p) => {
-      const details = publicPropsList.find((item) => item.id === p.id);
-      
-      const meta = parsePropertyMetadata(p);
-      const pricing = calculatePricing(p.days);
-      const bookings = getBookingsFromDays(p.days);
+    const mappedProperties = gridProps
+      .filter((p) => {
+        if (ownerId) {
+          // Only show properties that match the owner's items list
+          return publicPropsList.some((item) => item.id === p.id);
+        }
+        return true;
+      })
+      .map((p) => {
+        const details = publicPropsList.find((item) => item.id === p.id);
+        
+        const meta = parsePropertyMetadata(p);
+        const pricing = calculatePricing(p.days);
+        const bookings = getBookingsFromDays(p.days);
 
-      const rawAmenities = details?.amenities || [];
-      const mappedAmenities = rawAmenities.map((a: string) => AMENITY_MAP[a] || a);
+        const rawAmenities = details?.amenities || [];
+        const mappedAmenities = rawAmenities.map((a: string) => AMENITY_MAP[a] || a);
 
-      let images = getImages(p.name);
-      if (details?.images && details.images.length > 0) {
-        const sortedImages = [...details.images].sort((a: any, b: any) => a.order - b.order);
-        images = sortedImages.map((img: any) => img.imageUrl);
-      }
+        let images = getImages(p.name);
+        if (details?.images && details.images.length > 0) {
+          const sortedImages = [...details.images].sort((a: any, b: any) => a.order - b.order);
+          images = sortedImages.map((img: any) => img.imageUrl);
+        }
 
-      return {
-        id: p.id,
-        slug: details?.slug || `${slugify(p.name)}-${p.id.substring(0, 4)}`,
-        name: p.name,
-        building: details?.address || meta.building,
-        area: meta.area,
-        address: details?.address || p.address || "Hạ Long, Quảng Ninh",
-        bedrooms: details?.bedrooms !== undefined ? details.bedrooms : meta.bedrooms,
-        bathrooms: details?.bathrooms !== undefined ? details.bathrooms : meta.bathrooms,
-        floorArea: details?.floorArea || meta.floorArea,
-        maxGuests: details?.maxGuests !== undefined ? details.maxGuests : meta.maxGuests,
-        amenities: mappedAmenities.length > 0 ? mappedAmenities : meta.amenities,
-        description: details?.description || meta.description,
-        images,
-        pricing: {
-          weekday: details?.weekdayPrice || pricing.weekday,
-          weekend: details?.weekendPrice || pricing.weekend,
-          ctvDiscount: 0,
-          holiday: details?.holidayPrice || undefined,
-        },
-        bookings,
-        ownerName: details?.host?.name || "Anh Tuấn",
-        ownerNote: details?.rules || (p.ownerPhone ? `Liên hệ sđt: ${p.ownerPhone}` : "Nhận khách từ 14:00, trả phòng trước 12:00."),
-        updatedAt: new Date().toISOString(),
-      };
-    });
-  } catch (error) {
+        return {
+          id: p.id,
+          slug: details?.slug || `${slugify(p.name)}-${p.id.substring(0, 4)}`,
+          name: p.name,
+          building: details?.address || meta.building,
+          area: meta.area,
+          address: details?.address || p.address || "Hạ Long, Quảng Ninh",
+          bedrooms: details?.bedrooms !== undefined ? details.bedrooms : meta.bedrooms,
+          bathrooms: details?.bathrooms !== undefined ? details.bathrooms : meta.bathrooms,
+          floorArea: details?.floorArea || meta.floorArea,
+          maxGuests: details?.maxGuests !== undefined ? details.maxGuests : meta.maxGuests,
+          amenities: mappedAmenities.length > 0 ? mappedAmenities : meta.amenities,
+          description: details?.description || meta.description,
+          images,
+          pricing: {
+            weekday: details?.weekdayPrice || pricing.weekday,
+            weekend: details?.weekendPrice || pricing.weekend,
+            ctvDiscount: 0,
+            holiday: details?.holidayPrice || undefined,
+          },
+          bookings,
+          ownerName: details?.host?.name || ownerInfo?.name || "Anh Tuấn",
+          ownerNote: details?.rules || (p.ownerPhone ? `Liên hệ sđt: ${p.ownerPhone}` : "Nhận khách từ 14:00, trả phòng trước 12:00."),
+          ownerPhone: p.ownerPhone || null,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+
+    return {
+      properties: mappedProperties,
+      owner: ownerInfo,
+      error: undefined,
+    };
+  } catch (error: any) {
     console.error("Error in getProperties API fetch:", error);
-    return [];
+    return {
+      properties: [],
+      error: error?.message || "Lỗi hệ thống khi tải danh sách căn.",
+    };
   }
 }
 
@@ -405,6 +466,7 @@ export async function getPropertyDetail(
       bookings,
       ownerName: details.host?.name || "Anh Tuấn",
       ownerNote: details.rules || "Nhận khách từ 14:00, trả phòng trước 12:00.",
+      ownerPhone: gridProp?.ownerPhone || null,
       updatedAt: new Date().toISOString(),
     };
   } catch (error) {

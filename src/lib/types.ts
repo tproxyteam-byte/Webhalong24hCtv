@@ -42,6 +42,7 @@ export interface Property {
   bookings: BookingBlock[];
   ownerName: string;
   ownerNote?: string;
+  ownerPhone?: string | null;
   /** ISO date — lần cập nhật cuối từ Manager app */
   updatedAt: string;
 }

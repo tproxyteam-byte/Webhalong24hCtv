@@ -171,13 +171,36 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
               <div className="flex flex-col gap-2.5">
                 <ShareButton slug={property.slug} name={property.name} />
-                <a
-                  href="tel:0987654321"
-                  className="btn btn-primary w-full shadow-md shadow-teal-950/10 text-center"
-                  aria-label={`Gọi chủ nhà ${property.ownerName}`}
-                >
-                  Gọi {property.ownerName}
-                </a>
+                {property.ownerPhone ? (
+                  <>
+                    <a
+                      href={`https://zalo.me/${property.ownerPhone}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn bg-[#0068ff] hover:bg-[#0054d1] text-white w-full text-center flex items-center justify-center gap-2 py-2.5 font-bold rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer outline-none"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 5.58 2 10c0 2.22 1.08 4.23 2.87 5.67L4 19.5c-.13.38.22.73.58.58l3.92-1.63c1.09.35 2.27.55 3.5.55 5.52 0 10-3.58 10-8s-4.48-8-10-8zm1 11h-2v-2h2v2zm0-4h-2V7h2v2z" />
+                      </svg>
+                      Zalo Gọi điện
+                    </a>
+                    <a
+                      href={`tel:${property.ownerPhone}`}
+                      className="btn border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 w-full text-center flex items-center justify-center gap-2 py-2.5 font-bold rounded-xl transition-all active:scale-[0.98] outline-none"
+                      aria-label={`Gọi chủ nhà ${property.ownerName}`}
+                    >
+                      Gọi {property.ownerName}
+                    </a>
+                  </>
+                ) : (
+                  <a
+                    href="tel:0901234567"
+                    className="btn btn-primary w-full shadow-md shadow-teal-950/10 text-center"
+                    aria-label={`Gọi chủ nhà ${property.ownerName}`}
+                  >
+                    Gọi {property.ownerName}
+                  </a>
+                )}
               </div>
 
               <p className="text-center text-[10px] font-semibold text-neutral-400">

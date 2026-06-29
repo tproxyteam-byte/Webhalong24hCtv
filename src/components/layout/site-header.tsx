@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { COMMAND_PALETTE_OPEN_EVENT } from "@/components/command-palette";
@@ -13,28 +12,6 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
   const isMac = useIsMac();
-  const [displayName, setDisplayName] = useState("Sale Agent");
-
-  useEffect(() => {
-    const cookies = document.cookie.split("; ");
-    const userCookie = cookies.find((c) => c.startsWith("username="));
-    if (userCookie) {
-      const decoded = decodeURIComponent(userCookie.split("=")[1]);
-      const name = decoded.includes("@") ? decoded.split("@")[0] : decoded;
-      setDisplayName(name.charAt(0).toUpperCase() + name.slice(1));
-    }
-  }, []);
-
-  const handleLogout = () => {
-    if (window.confirm("Bạn có muốn đăng xuất khỏi hệ thống?")) {
-      document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = "username=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      window.location.href = "/login";
-    }
-  };
-
-  const initials = displayName.substring(0, 2).toUpperCase();
 
   const openPalette = () =>
     window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_OPEN_EVENT));
@@ -137,27 +114,7 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
             </IconButton>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            title="Đăng xuất"
-            className="ml-1 flex items-center gap-2 rounded-full bg-white p-1 pr-1.5 sm:border sm:border-neutral-200/80 sm:pr-3.5 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer outline-none"
-          >
-            <span
-              aria-hidden
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-teal-700 to-indigo-900 text-[10px] font-bold text-white shadow-sm"
-            >
-              {initials}
-            </span>
-            <div className="hidden flex-col items-start leading-none sm:flex text-left">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
-                Xin chào,
-              </span>
-              <span className="mt-0.5 text-xs font-bold text-neutral-800">
-                {displayName}
-              </span>
-            </div>
-          </button>
+
         </div>
       </div>
     </header>
