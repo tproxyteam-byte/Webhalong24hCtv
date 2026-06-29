@@ -244,6 +244,55 @@ function parsePropertyMetadata(p: any) {
   };
 }
 
+/**
+ * Hợp nhất 1 căn từ grid lịch (`ApiProperty`, có `days`) với phần chi tiết
+ * (`details` — `PropertyCardDto` từ endpoint properties public) thành `Property`
+ * cho UI. Dùng chung cho cả danh sách tất cả căn lẫn danh sách theo owner.
+ *
+ * Lưu ý: `PropertyCardDto` KHÔNG có field `host` — thông tin chủ nhà nằm ở
+ * `data.owner` (cùng cấp với `items`). Vì vậy `ownerName` được truyền vào.
+ */
+function buildProperty(p: ApiProperty, details: any, ownerName?: string): Property {
+  const meta = parsePropertyMetadata(p);
+  const pricing = calculatePricing(p.days);
+  const bookings = getBookingsFromDays(p.days);
+
+  const rawAmenities = details?.amenities || [];
+  const mappedAmenities = rawAmenities.map((a: string) => AMENITY_MAP[a] || a);
+
+  let images = getImages(p.name);
+  if (details?.images && details.images.length > 0) {
+    const sortedImages = [...details.images].sort((a: any, b: any) => a.order - b.order);
+    images = sortedImages.map((img: any) => img.imageUrl);
+  }
+
+  return {
+    id: p.id,
+    slug: details?.slug || `${slugify(p.name)}-${p.id.substring(0, 4)}`,
+    name: p.name,
+    building: details?.address || meta.building,
+    area: meta.area,
+    address: details?.address || p.address || "Hạ Long, Quảng Ninh",
+    bedrooms: details?.bedrooms !== undefined ? details.bedrooms : meta.bedrooms,
+    bathrooms: details?.bathrooms !== undefined ? details.bathrooms : meta.bathrooms,
+    floorArea: details?.floorArea || meta.floorArea,
+    maxGuests: details?.maxGuests !== undefined ? details.maxGuests : meta.maxGuests,
+    amenities: mappedAmenities.length > 0 ? mappedAmenities : meta.amenities,
+    description: details?.description || meta.description,
+    images,
+    pricing: {
+      weekday: details?.weekdayPrice || pricing.weekday,
+      weekend: details?.weekendPrice || pricing.weekend,
+      ctvDiscount: 0,
+      holiday: details?.holidayPrice || undefined,
+    },
+    bookings,
+    ownerName: ownerName || "Anh Tuấn",
+    ownerNote: details?.rules || (p.ownerPhone ? `Liên hệ sđt: ${p.ownerPhone}` : "Nhận khách từ 14:00, trả phòng trước 12:00."),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export async function getProperties(
   startDate?: string,
   endDate?: string
@@ -281,49 +330,102 @@ export async function getProperties(
 
     return gridProps.map((p) => {
       const details = publicPropsList.find((item) => item.id === p.id);
-      
-      const meta = parsePropertyMetadata(p);
-      const pricing = calculatePricing(p.days);
-      const bookings = getBookingsFromDays(p.days);
-
-      const rawAmenities = details?.amenities || [];
-      const mappedAmenities = rawAmenities.map((a: string) => AMENITY_MAP[a] || a);
-
-      let images = getImages(p.name);
-      if (details?.images && details.images.length > 0) {
-        const sortedImages = [...details.images].sort((a: any, b: any) => a.order - b.order);
-        images = sortedImages.map((img: any) => img.imageUrl);
-      }
-
-      return {
-        id: p.id,
-        slug: details?.slug || `${slugify(p.name)}-${p.id.substring(0, 4)}`,
-        name: p.name,
-        building: details?.address || meta.building,
-        area: meta.area,
-        address: details?.address || p.address || "Hạ Long, Quảng Ninh",
-        bedrooms: details?.bedrooms !== undefined ? details.bedrooms : meta.bedrooms,
-        bathrooms: details?.bathrooms !== undefined ? details.bathrooms : meta.bathrooms,
-        floorArea: details?.floorArea || meta.floorArea,
-        maxGuests: details?.maxGuests !== undefined ? details.maxGuests : meta.maxGuests,
-        amenities: mappedAmenities.length > 0 ? mappedAmenities : meta.amenities,
-        description: details?.description || meta.description,
-        images,
-        pricing: {
-          weekday: details?.weekdayPrice || pricing.weekday,
-          weekend: details?.weekendPrice || pricing.weekend,
-          ctvDiscount: 0,
-          holiday: details?.holidayPrice || undefined,
-        },
-        bookings,
-        ownerName: details?.host?.name || "Anh Tuấn",
-        ownerNote: details?.rules || (p.ownerPhone ? `Liên hệ sđt: ${p.ownerPhone}` : "Nhận khách từ 14:00, trả phòng trước 12:00."),
-        updatedAt: new Date().toISOString(),
-      };
+      return buildProperty(p, details);
     });
   } catch (error) {
     console.error("Error in getProperties API fetch:", error);
     return [];
+  }
+}
+
+/** Chủ nhà (OWNER) trả về từ endpoint public by-owner. */
+export interface PublicOwner {
+  id: string;
+  name: string;
+  phone: string | null;
+  avatarUrl: string | null;
+}
+
+export interface OwnerPropertiesResult {
+  owner: PublicOwner;
+  properties: Property[];
+}
+
+/**
+ * Lấy danh sách phòng công khai của 1 OWNER cho trang share Zalo
+ * (`/zalo-cal/:ownerId`). Consume 2 endpoint public BE:
+ *   - GET /properties/public/by-owner/:ownerId  → { owner, items, total }
+ *   - GET /calendar/public-grid?propertyIds=…&startDate=…&endDate=…
+ *
+ * Trả `null` khi owner không tồn tại / không còn entitlement (BE trả 404,
+ * theo visibility rule §4.1) hoặc khi gọi API lỗi — page sẽ render notFound.
+ */
+export async function getPropertiesByOwner(
+  ownerId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<OwnerPropertiesResult | null> {
+  const start = startDate || todayISO();
+  const end = endDate || addDays(start, 90);
+
+  try {
+    const ownerRes = await fetch(
+      `https://api.halong24h.com/properties/public/by-owner/${encodeURIComponent(ownerId)}`,
+      { next: { revalidate: 60 } }
+    );
+    if (ownerRes.status === 404) return null;
+    if (!ownerRes.ok) {
+      throw new Error(`Failed to fetch owner properties: ${ownerRes.statusText}`);
+    }
+
+    // Mọi endpoint Halong24h đều bọc qua global ResponseInterceptor:
+    // { success, message, data: { owner, items, total } }.
+    const ownerJson = await ownerRes.json();
+    const owner: PublicOwner | undefined = ownerJson.data?.owner;
+    const items: any[] = ownerJson.data?.items || [];
+
+    if (!owner) {
+      throw new Error("Invalid by-owner response structure");
+    }
+
+    if (items.length === 0) {
+      return { owner, properties: [] };
+    }
+
+    const propertyIds = items.map((it) => it.id).join(",");
+    const gridRes = await fetch(
+      `https://api.halong24h.com/calendar/public-grid?propertyIds=${encodeURIComponent(
+        propertyIds
+      )}&startDate=${start}&endDate=${end}`,
+      { next: { revalidate: 60 } }
+    );
+    if (!gridRes.ok) {
+      throw new Error(`Failed to fetch calendar grid: ${gridRes.statusText}`);
+    }
+
+    const gridJson = await gridRes.json();
+    const gridProps: ApiProperty[] = gridJson.data?.properties || [];
+
+    const properties = items.map((details) => {
+      const gridProp = gridProps.find((g) => g.id === details.id);
+      // Căn chưa có ô lịch nào trong khoảng query → vẫn hiển thị, days rỗng.
+      const apiProp: ApiProperty = gridProp ?? {
+        id: details.id,
+        code: details.code ?? "",
+        name: details.name,
+        type: details.type ?? 1,
+        view: details.view ?? null,
+        address: details.address ?? null,
+        ownerPhone: owner.phone,
+        days: [],
+      };
+      return buildProperty(apiProp, details, owner.name);
+    });
+
+    return { owner, properties };
+  } catch (error) {
+    console.error(`Error in getPropertiesByOwner for ${ownerId}:`, error);
+    return null;
   }
 }
 

@@ -5,9 +5,10 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get("accessToken")?.value;
   const { pathname } = request.nextUrl;
 
-  // Allow requests to login page, Next.js static assets, public files, and favicon
+  // Allow login page, public Zalo share calendar, Next.js static assets, public files, and favicon
   if (
     pathname.startsWith("/login") ||
+    pathname.startsWith("/zalo-cal") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.includes(".")
