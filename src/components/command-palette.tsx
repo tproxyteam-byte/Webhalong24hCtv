@@ -17,6 +17,22 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const isMac = useIsMac();
   const router = useRouter();
+  const [properties, setProperties] = useState<any[]>(SAMPLE_PROPERTIES);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if ((window as any).__activeProperties) {
+        setProperties((window as any).__activeProperties);
+      }
+      const handler = () => {
+        if ((window as any).__activeProperties) {
+          setProperties((window as any).__activeProperties);
+        }
+      };
+      window.addEventListener("websale:active-properties-updated", handler);
+      return () => window.removeEventListener("websale:active-properties-updated", handler);
+    }
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -83,7 +99,7 @@ export function CommandPalette() {
             />
           </svg>
           <Command.Input
-            placeholder="Tìm căn theo tên, tòa nhà, khu vực…"
+            placeholder="Tìm căn theo tên…"
             className="h-12 w-full bg-transparent text-[0.9375rem] outline-none placeholder:text-neutral-400"
           />
           <kbd className="ml-2 hidden h-5 shrink-0 items-center rounded border border-neutral-200 bg-neutral-50 px-1.5 font-mono text-[10px] font-medium text-neutral-500 sm:inline-flex">
@@ -95,18 +111,17 @@ export function CommandPalette() {
           <Command.Empty className="px-3 py-8 text-center text-sm text-neutral-500">
             Không tìm thấy căn nào phù hợp.
           </Command.Empty>
-
+ 
           <Command.Group
             heading="Căn hộ"
             className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5"
           >
-            {SAMPLE_PROPERTIES.map((p) => {
+            {properties.map((p) => {
               const factor = 1 - p.pricing.ctvDiscount;
               const ctvWeekend = Math.round(p.pricing.weekend * factor);
               const availNights = countAvailableNights(p.bookings, today, 30);
               const minPrice = minCtvPriceNext30Days(p.pricing, today);
-              const searchKey =
-                `${p.name} ${p.building} ${p.area} ${p.bedrooms}PN ${ctvWeekend}`.toLowerCase();
+              const searchKey = p.name.toLowerCase();
 
               return (
                 <Command.Item
@@ -198,7 +213,7 @@ export function CommandPalette() {
             </span>
           </div>
           <span className="hidden sm:inline">
-            {SAMPLE_PROPERTIES.length} căn
+            {properties.length} căn
           </span>
         </div>
       </Command>

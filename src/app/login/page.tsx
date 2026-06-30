@@ -66,10 +66,6 @@ export default function LoginPage() {
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 px-3 py-1 shadow-md">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-white">
-              Webhalong24h
-            </span>
-            <span className="h-3 w-px bg-white/30" />
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-100">
               Sale
             </span>
           </div>

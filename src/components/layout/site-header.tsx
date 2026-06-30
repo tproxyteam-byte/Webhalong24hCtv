@@ -14,10 +14,17 @@ interface SiteHeaderProps {
 export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
   const isMac = useIsMac();
   const [displayName, setDisplayName] = useState("Sale Agent");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const cookies = document.cookie.split("; ");
+    const tokenCookie = cookies.find((c) => c.startsWith("accessToken="));
     const userCookie = cookies.find((c) => c.startsWith("username="));
+
+    if (tokenCookie && tokenCookie.split("=")[1]) {
+      setIsLoggedIn(true);
+    }
+
     if (userCookie) {
       const decoded = decodeURIComponent(userCookie.split("=")[1]);
       const name = decoded.includes("@") ? decoded.split("@")[0] : decoded;
@@ -51,9 +58,6 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
               ←
             </span>
           )}
-          <span className="text-base font-semibold tracking-tight text-neutral-900 sm:text-lg">
-            Webhalong24h
-          </span>
           <span className="rounded-md bg-gradient-to-r from-teal-600 to-teal-700 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm">
             Sale
           </span>
@@ -88,7 +92,7 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
             />
           </svg>
           <span className="hidden flex-1 truncate text-left text-neutral-400 font-medium sm:inline">
-            Tìm theo tên căn, tòa nhà, địa chỉ…
+            Tìm theo tên căn…
           </span>
           <kbd className="hidden h-5 shrink-0 items-center rounded-md border border-neutral-200 bg-neutral-50 px-1.5 font-mono text-[9px] font-semibold text-neutral-400 sm:inline-flex">
             {isMac ? "⌘" : "Ctrl"} + K
@@ -137,27 +141,29 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
             </IconButton>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            title="Đăng xuất"
-            className="ml-1 flex items-center gap-2 rounded-full bg-white p-1 pr-1.5 sm:border sm:border-neutral-200/80 sm:pr-3.5 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer outline-none"
-          >
-            <span
-              aria-hidden
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-teal-700 to-indigo-900 text-[10px] font-bold text-white shadow-sm"
+          {isLoggedIn && (
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Đăng xuất"
+              className="ml-1 flex items-center gap-2 rounded-full bg-white p-1 pr-1.5 sm:border sm:border-neutral-200/80 sm:pr-3.5 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer outline-none"
             >
-              {initials}
-            </span>
-            <div className="hidden flex-col items-start leading-none sm:flex text-left">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
-                Xin chào,
+              <span
+                aria-hidden
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-teal-700 to-indigo-900 text-[10px] font-bold text-white shadow-sm"
+              >
+                {initials}
               </span>
-              <span className="mt-0.5 text-xs font-bold text-neutral-800">
-                {displayName}
-              </span>
-            </div>
-          </button>
+              <div className="hidden flex-col items-start leading-none sm:flex text-left">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
+                  Xin chào,
+                </span>
+                <span className="mt-0.5 text-xs font-bold text-neutral-800">
+                  {displayName}
+                </span>
+              </div>
+            </button>
+          )}
         </div>
       </div>
     </header>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { Property } from "@/lib/types";
 import {
   countAvailableNights,
@@ -126,6 +126,13 @@ function isFiltersDirty(f: FilterState): boolean {
 }
 
 export function HomeView({ properties, areas, today, updatedLabel }: HomeViewProps) {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).__activeProperties = properties;
+      window.dispatchEvent(new CustomEvent("websale:active-properties-updated"));
+    }
+  }, [properties]);
+
   const storedView = useSyncExternalStore(
     subscribeView,
     getViewSnapshot,

@@ -60,7 +60,8 @@ function groupByMonth(days: DayInfo[]): MonthGroup[] {
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     if (key !== curKey) {
       curKey = key;
-      out.push({ label: `Tháng ${d.getMonth() + 1} ${d.getFullYear()}`, span: 1 });
+      const monthStr = String(d.getMonth() + 1).padStart(2, "0");
+      out.push({ label: `${monthStr}-${d.getFullYear()}`, span: 1 });
     } else {
       out[out.length - 1].span += 1;
     }
@@ -191,7 +192,7 @@ export function AvailabilityMatrix({
                 }
                 style={{ width: `calc(var(--cell-w) * ${g.span})` }}
               >
-                <span className="px-3 text-xs font-bold uppercase tracking-wider text-neutral-600">
+                <span className="px-3 text-xs font-bold uppercase tracking-wider text-neutral-600 whitespace-nowrap">
                   {g.label}
                 </span>
               </div>
