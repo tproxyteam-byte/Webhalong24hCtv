@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { COMMAND_PALETTE_OPEN_EVENT } from "@/components/command-palette";
@@ -12,6 +13,36 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
   const isMac = useIsMac();
+  const [displayName, setDisplayName] = useState("Sale Agent");
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const cookies = document.cookie.split("; ");
+    const userCookie = cookies.find((c) => c.startsWith("username="));
+    if (userCookie) {
+      const decoded = decodeURIComponent(userCookie.split("=")[1]);
+      const name = decoded.includes("@") ? decoded.split("@")[0] : decoded;
+      // The display name comes from a browser-only cookie after hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDisplayName(name.charAt(0).toUpperCase() + name.slice(1));
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Logout request failed");
+      document.cookie = "username=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      window.location.href = "/login";
+    } catch {
+      toast.error("Không thể đăng xuất. Vui lòng thử lại.");
+      setIsLoggingOut(false);
+    }
+  };
+
+  const initials = displayName.substring(0, 2).toUpperCase();
 
   const openPalette = () =>
     window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_OPEN_EVENT));
@@ -20,6 +51,7 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
     toast(label, { description: "Tính năng đang phát triển." });
 
   return (
+    <>
     <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/80 backdrop-blur-md shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
       <div className="mx-auto flex h-16 max-w-[1800px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
         <Link href="/" className="flex shrink-0 items-center gap-1.5 group">
@@ -114,10 +146,79 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
             </IconButton>
           </div>
 
-
+          <button
+            type="button"
+            onClick={() => setShowLogoutDialog(true)}
+            title="Đăng xuất"
+            className="ml-1 flex items-center gap-2 rounded-full bg-white p-1 pr-1.5 sm:border sm:border-neutral-200/80 sm:pr-3.5 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer outline-none"
+          >
+            <span
+              aria-hidden
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-teal-700 to-indigo-900 text-[10px] font-bold text-white shadow-sm"
+            >
+              {initials}
+            </span>
+            <div className="hidden flex-col items-start leading-none sm:flex text-left">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
+                Xin chào,
+              </span>
+              <span className="mt-0.5 text-xs font-bold text-neutral-800">
+                {displayName}
+              </span>
+            </div>
+          </button>
         </div>
       </div>
     </header>
+    {showLogoutDialog && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/45 px-4 backdrop-blur-[2px]"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !isLoggingOut) {
+            setShowLogoutDialog(false);
+          }
+        }}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="logout-dialog-title"
+          aria-describedby="logout-dialog-description"
+          className="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl"
+        >
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M10 17l5-5-5-5M15 12H3M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h2 id="logout-dialog-title" className="mt-4 text-lg font-bold text-neutral-900">
+            Đăng xuất khỏi hệ thống?
+          </h2>
+          <p id="logout-dialog-description" className="mt-2 text-sm leading-6 text-neutral-500">
+            Bạn sẽ cần đăng nhập lại để tiếp tục xem lịch và giá dành cho Sale.
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              disabled={isLoggingOut}
+              onClick={() => setShowLogoutDialog(false)}
+              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+              className="min-w-28 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              {isLoggingOut ? "Đang đăng xuất…" : "Đăng xuất"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

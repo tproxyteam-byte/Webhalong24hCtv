@@ -137,13 +137,22 @@ export function getBookingsFromDays(days: ApiProperty["days"]): BookingBlock[] {
   const sortedDays = [...days].sort((a, b) => a.date.localeCompare(b.date));
 
   for (const day of sortedDays) {
-    const isLocked = day.status === "locked";
+    const apiStatus = day.status.trim().toLowerCase();
+    let status: BookingStatus | null = null;
 
-    if (isLocked) {
+    if (apiStatus !== "available") {
+      status = apiStatus === "hold" ? "hold" : "booked";
+    }
+
+    if (status) {
       const dateStr = day.date;
       const nextDateStr = addDays(dateStr, 1);
 
-      if (currentBlock) {
+      if (
+        currentBlock &&
+        currentBlock.status === status &&
+        currentBlock.end === dateStr
+      ) {
         currentBlock.end = nextDateStr;
         if (day.note && !currentBlock.source?.includes(day.note)) {
           currentBlock.source = currentBlock.source ? `${currentBlock.source}, ${day.note}` : day.note;
@@ -152,8 +161,9 @@ export function getBookingsFromDays(days: ApiProperty["days"]): BookingBlock[] {
         currentBlock = {
           start: dateStr,
           end: nextDateStr,
-          status: "booked" as BookingStatus,
-          source: day.note || "Lịch khóa",
+          status,
+          source:
+            day.note || (status === "hold" ? "Đang giữ chỗ" : "Đã đặt"),
         };
         bookings.push(currentBlock);
       }
@@ -163,6 +173,24 @@ export function getBookingsFromDays(days: ApiProperty["days"]): BookingBlock[] {
   }
 
   return bookings;
+}
+
+function findGridProperty(
+  properties: ApiProperty[],
+  details: { id?: unknown; code?: unknown },
+): ApiProperty | undefined {
+  const propertyId = String(details.id ?? "").trim();
+  const propertyCode = String(details.code ?? "").trim().toLowerCase();
+
+  return properties.find((property) => {
+    const gridId = String(property.id ?? "").trim();
+    const gridCode = String(property.code ?? "").trim().toLowerCase();
+
+    return (
+      (propertyId !== "" && gridId === propertyId) ||
+      (propertyCode !== "" && gridCode === propertyCode)
+    );
+  });
 }
 
 function parsePropertyMetadata(p: any) {
@@ -307,7 +335,7 @@ export async function getProperties(
     const gridRes = await fetch(
       `https://api.halong24h.com/calendar/public-grid?startDate=${start}&endDate=${end}`,
       {
-        next: { revalidate: 60 },
+        cache: "no-store",
       }
     );
 
@@ -408,12 +436,10 @@ export async function getPropertyDetail(
       throw new Error(json.message || "Invalid API response");
     }
     const details = json.data;
-    const propertyId = details.id;
-
     const gridRes = await fetch(
       `https://api.halong24h.com/calendar/public-grid?startDate=${start}&endDate=${end}`,
       {
-        next: { revalidate: 60 },
+        cache: "no-store",
       }
     );
     if (!gridRes.ok) {
@@ -421,7 +447,7 @@ export async function getPropertyDetail(
     }
     const gridJson = await gridRes.json();
     const gridProps: ApiProperty[] = gridJson.data?.properties || [];
-    const gridProp = gridProps.find((p) => p.id === propertyId);
+    const gridProp = findGridProperty(gridProps, details);
 
     const bookings = gridProp ? getBookingsFromDays(gridProp.days) : [];
 

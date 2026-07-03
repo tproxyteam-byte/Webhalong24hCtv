@@ -44,8 +44,8 @@ export function nightsBetween(start: string, end: string): number {
 
 /** Thêm n ngày vào ISO date → ISO date */
 export function addDays(iso: string, n: number): string {
-  const d = new Date(iso + "T00:00:00");
-  d.setDate(d.getDate() + n);
+  const [year, month, day] = iso.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day + n));
   return d.toISOString().slice(0, 10);
 }
 
