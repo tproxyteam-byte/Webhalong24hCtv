@@ -32,7 +32,7 @@ export function OwnerBanner({ owner }: OwnerBannerProps) {
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
-      const shareUrl = `${window.location.origin}/properties/public/by-owner/${owner.id}`;
+      const shareUrl = `${window.location.origin}/calendar/properties?ownerId=${owner.id}`;
       navigator.clipboard.writeText(shareUrl).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

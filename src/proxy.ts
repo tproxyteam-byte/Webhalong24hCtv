@@ -9,7 +9,6 @@ export function proxy(request: NextRequest) {
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/zalo-cal") ||
-    pathname.startsWith("/properties/public") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.includes(".")

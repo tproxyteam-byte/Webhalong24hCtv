@@ -19,21 +19,34 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    const cookies = document.cookie.split("; ");
-    const tokenCookie = cookies.find((c) => c.startsWith("accessToken="));
-    const userCookie = cookies.find((c) => c.startsWith("username="));
+    const handleAuthCheck = () => {
+      const path = window.location.pathname;
+      const isPublicPath = path.startsWith("/zalo-cal") || path.startsWith("/login");
 
-    if (tokenCookie && tokenCookie.split("=")[1]) {
-      setIsLoggedIn(true);
-    }
+      const cookies = document.cookie.split("; ");
+      const userCookie = cookies.find((c) => c.startsWith("username="));
+      const hasUser = userCookie && userCookie.split("=")[1];
 
-    if (userCookie) {
-      const decoded = decodeURIComponent(userCookie.split("=")[1]);
-      const name = decoded.includes("@") ? decoded.split("@")[0] : decoded;
-      // The display name comes from a browser-only cookie after hydration.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDisplayName(name.charAt(0).toUpperCase() + name.slice(1));
-    }
+      if (!hasUser) {
+        setIsLoggedIn(false);
+        if (!isPublicPath) {
+          window.location.replace("/login");
+          return;
+        }
+      } else {
+        setIsLoggedIn(true);
+        const decoded = decodeURIComponent(userCookie.split("=")[1]);
+        const name = decoded.includes("@") ? decoded.split("@")[0] : decoded;
+        setDisplayName(name.charAt(0).toUpperCase() + name.slice(1));
+      }
+    };
+
+    handleAuthCheck();
+
+    window.addEventListener("pageshow", handleAuthCheck);
+    return () => {
+      window.removeEventListener("pageshow", handleAuthCheck);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -150,7 +163,7 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
             </IconButton>
           </div>
 
-          {isLoggedIn && (
+          {isLoggedIn ? (
             <button
               type="button"
               onClick={() => setShowLogoutDialog(true)}
@@ -172,6 +185,13 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
                 </span>
               </div>
             </button>
+          ) : (
+            <Link
+              href="/login"
+              className="ml-2 flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-700 active:scale-95 transition-all outline-none"
+            >
+              Đăng nhập
+            </Link>
           )}
         </div>
       </div>
