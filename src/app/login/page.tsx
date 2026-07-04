@@ -18,7 +18,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const response = await fetch("https://api.halong24h.com/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -34,12 +34,17 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
+        const role = Number(result.data?.user?.role ?? result.data?.role);
+
+        if (role !== 2) {
+          toast.error("Không có tài khoản.");
+          return;
+        }
+
         toast.success("Đăng nhập thành công!");
 
-        // Save tokens to cookies (valid for 365 days to stay logged in until explicit logout)
+        // Authentication tokens are set as HttpOnly cookies by the Route Handler.
         const maxAge = 365 * 24 * 60 * 60; // 365 days
-        document.cookie = `accessToken=${result.data.accessToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
-        document.cookie = `refreshToken=${result.data.refreshToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
         document.cookie = `username=${encodeURIComponent(username.trim())}; path=/; max-age=${maxAge}; SameSite=Lax`;
 
         // Redirect to homepage with a full page reload to reset client-side router states

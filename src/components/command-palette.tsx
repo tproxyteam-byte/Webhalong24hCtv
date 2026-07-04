@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { SAMPLE_PROPERTIES } from "@/lib/sample-properties";
+import type { Property } from "@/lib/types";
 import { countAvailableNights, minCtvPriceNext30Days } from "@/lib/calendar";
 import {
   formatCompactVND,
@@ -15,23 +15,52 @@ export const COMMAND_PALETTE_OPEN_EVENT = "websale:open-command-palette";
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const isMac = useIsMac();
   const router = useRouter();
-  const [properties, setProperties] = useState<any[]>(SAMPLE_PROPERTIES);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       if ((window as any).__activeProperties) {
         setProperties((window as any).__activeProperties);
+        setIsLoading(false);
       }
       const handler = () => {
         if ((window as any).__activeProperties) {
           setProperties((window as any).__activeProperties);
+          setIsLoading(false);
         }
       };
       window.addEventListener("websale:active-properties-updated", handler);
       return () => window.removeEventListener("websale:active-properties-updated", handler);
     }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProperties() {
+      // If we already have window-level active properties, we don't need to load all properties from the API
+      if (typeof window !== "undefined" && (window as any).__activeProperties) {
+        return;
+      }
+      try {
+        const response = await fetch("/api/properties");
+        if (!response.ok) throw new Error("Failed to load properties");
+        const result = await response.json();
+        if (active) setProperties(result.data ?? []);
+      } catch (error) {
+        console.error("Search properties error:", error);
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadProperties();
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -108,10 +137,16 @@ export function CommandPalette() {
         </div>
 
         <Command.List className="max-h-[60vh] overflow-y-auto p-1.5 scrollbar-thin">
-          <Command.Empty className="px-3 py-8 text-center text-sm text-neutral-500">
-            Không tìm thấy căn nào phù hợp.
-          </Command.Empty>
- 
+          {isLoading && (
+            <div className="px-3 py-8 text-center text-sm text-neutral-500">
+              Đang tải danh sách căn…
+            </div>
+          )}
+          {!isLoading && (
+            <Command.Empty className="px-3 py-8 text-center text-sm text-neutral-500">
+              Không tìm thấy căn nào phù hợp.
+            </Command.Empty>
+          )}
           <Command.Group
             heading="Căn hộ"
             className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5"
