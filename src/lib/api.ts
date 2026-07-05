@@ -1,6 +1,8 @@
 import { addDays, todayISO } from "./format";
 import type { BookingBlock, BookingStatus, Property, PropertyPricing } from "./types";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.halong24h.com";
+
 export interface ApiProperty {
   id: string;
   code: string;
@@ -345,7 +347,7 @@ export async function getProperties(
   try {
     if (ownerId) {
       try {
-        const ownerRes = await fetch(`https://api.halong24h.com/properties/public/by-owner/${ownerId}`, {
+        const ownerRes = await fetch(`${API_URL}/properties/public/by-owner/${ownerId}`, {
           next: { revalidate: 60 },
         });
         if (!ownerRes.ok) {
@@ -372,7 +374,7 @@ export async function getProperties(
         };
       }
     } else {
-      const propsRes = await fetch("https://api.halong24h.com/properties/public", {
+      const propsRes = await fetch(`${API_URL}/properties/public`, {
         next: { revalidate: 60 },
       });
       if (!propsRes.ok) {
@@ -383,7 +385,7 @@ export async function getProperties(
     }
 
     const gridRes = await fetch(
-      `https://api.halong24h.com/calendar/public-grid?startDate=${start}&endDate=${end}`,
+      `${API_URL}/calendar/public-grid?startDate=${start}&endDate=${end}`,
       {
         cache: "no-store",
       }
@@ -459,7 +461,7 @@ export async function getPropertiesByOwner(
 
   try {
     const ownerRes = await fetch(
-      `https://api.halong24h.com/properties/public/by-owner/${encodeURIComponent(ownerId)}`,
+      `${API_URL}/properties/public/by-owner/${encodeURIComponent(ownerId)}`,
       { next: { revalidate: 60 } }
     );
     if (ownerRes.status === 404) return null;
@@ -483,7 +485,7 @@ export async function getPropertiesByOwner(
 
     const propertyIds = items.map((it) => it.id).join(",");
     const gridRes = await fetch(
-      `https://api.halong24h.com/calendar/public-grid?propertyIds=${encodeURIComponent(
+      `${API_URL}/calendar/public-grid?propertyIds=${encodeURIComponent(
         propertyIds
       )}&startDate=${start}&endDate=${end}`,
       { next: { revalidate: 60 } }
@@ -526,7 +528,7 @@ export async function getPropertyDetail(
   const end = addDays(start, 90);
 
   try {
-    const res = await fetch(`https://api.halong24h.com/properties/public/${slug}`, {
+    const res = await fetch(`${API_URL}/properties/public/${slug}`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) {
@@ -539,7 +541,7 @@ export async function getPropertyDetail(
     }
     const details = json.data;
     const gridRes = await fetch(
-      `https://api.halong24h.com/calendar/public-grid?startDate=${start}&endDate=${end}`,
+      `${API_URL}/calendar/public-grid?startDate=${start}&endDate=${end}`,
       {
         cache: "no-store",
       }

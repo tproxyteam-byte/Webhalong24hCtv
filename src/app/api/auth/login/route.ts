@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-const LOGIN_URL = "https://api.halong24h.com/auth/login";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.halong24h.com";
+const LOGIN_URL = `${API_URL}/auth/login`;
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
 
 function findValue(value: unknown, keys: string[]): unknown {

@@ -13,6 +13,17 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
   const [mobileIndex, setMobileIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const navigateTo = (index: number) => {
+    setCurrentIndex(index);
+    if (scrollContainerRef.current) {
+      const width = scrollContainerRef.current.clientWidth;
+      scrollContainerRef.current.scrollTo({
+        left: index * width,
+        behavior: "smooth",
+      });
+    }
+  };
+
   const [hero, ...rest] = images;
   const sideImages = rest.slice(0, 4);
 
@@ -71,17 +82,6 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
   const openLightbox = (index: number) => {
     setCurrentIndex(index);
     setIsOpen(true);
-  };
-
-  const navigateTo = (index: number) => {
-    setCurrentIndex(index);
-    if (scrollContainerRef.current) {
-      const width = scrollContainerRef.current.clientWidth;
-      scrollContainerRef.current.scrollTo({
-        left: index * width,
-        behavior: "smooth",
-      });
-    }
   };
 
   const handleMobileScroll = (e: React.UIEvent<HTMLDivElement>) => {
