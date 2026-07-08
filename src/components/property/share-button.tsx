@@ -19,7 +19,7 @@ const CUSTOMER_SITE_URL =
 export function ShareButton({ slug, name }: ShareButtonProps) {
   const handleClick = async () => {
     if (typeof window === "undefined") return;
-    const url = `${CUSTOMER_SITE_URL}/${slug}`;
+    const url = `${CUSTOMER_SITE_URL}/properties/public/${slug}`;
     try {
       await navigator.clipboard.writeText(url);
       toast("Đã sao chép link gửi khách", {
