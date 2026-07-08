@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { HomeView } from "@/components/home/home-view";
 import { getPropertiesByOwner, type PublicOwner, type OwnerPropertiesResult } from "@/lib/api";
 import { addDays, todayISO } from "@/lib/format";
+import { useFavorites } from "@/hooks/use-favorites";
 
 interface ZaloCalClientViewProps {
   ownerId: string;
@@ -24,6 +25,7 @@ function ownerInitials(name: string): string {
 }
 
 export function ZaloCalClientView({ ownerId }: ZaloCalClientViewProps) {
+  const { favorites } = useFavorites();
   const [data, setData] = useState<OwnerPropertiesResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -75,7 +77,13 @@ export function ZaloCalClientView({ ownerId }: ZaloCalClientViewProps) {
   if (isLoading) {
     return (
       <>
-        <SiteHeader subtitle="Đang tải..." />
+        <SiteHeader
+          subtitle="Đang tải..."
+          favoritesCount={favorites.length}
+          onFavoritesToggle={() => {
+            window.location.href = "/calendar/properties?favorites=true";
+          }}
+        />
         <main className="mx-auto w-full max-w-[1800px] px-4 pb-16 pt-12 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[60vh]">
           <div className="flex flex-col items-center gap-4">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-teal-600"></div>
@@ -96,7 +104,13 @@ export function ZaloCalClientView({ ownerId }: ZaloCalClientViewProps) {
 
   return (
     <>
-      <SiteHeader subtitle={`Lịch phòng · ${owner.name}`} />
+      <SiteHeader
+        subtitle={`Lịch phòng · ${owner.name}`}
+        favoritesCount={favorites.length}
+        onFavoritesToggle={() => {
+          window.location.href = "/calendar/properties?favorites=true";
+        }}
+      />
       <main className="mx-auto w-full max-w-[1800px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8">
         <OwnerHero owner={owner} roomCount={properties.length} />
 
@@ -175,7 +189,7 @@ function OwnerHero({
               className="btn btn-primary shadow-md shadow-teal-950/10 text-center"
               aria-label={`Nhắn Zalo cho ${owner.name}`}
             >
-              Gọi Zalo {owner.name}
+              Nhắn tin Zalo
             </a>
             <a
               href={`tel:${phone}`}

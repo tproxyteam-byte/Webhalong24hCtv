@@ -1,7 +1,9 @@
 import { addDays, todayISO } from "./format";
 import type { BookingBlock, BookingStatus, Property, PropertyPricing } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.halong24h.com";
+const API_URL = typeof window !== "undefined"
+  ? "/api-backend"
+  : (process.env.NEXT_PUBLIC_API_URL || "https://api.halong24h.com");
 
 export interface ApiProperty {
   id: string;

@@ -10,6 +10,7 @@ function formatVNDPlain(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
 }
 import { getPrimaryViewLabel } from "@/lib/amenities";
+import { useFavorites } from "@/hooks/use-favorites";
 
 export const MATRIX_JUMP_TODAY_EVENT = "websale:matrix-jump-today";
 
@@ -473,15 +474,17 @@ function PriceCell({
 }
 
 function FavoriteButton({ id, name }: { id: string; name: string }) {
-  const [active, setActive] = useState(false);
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const active = isFavorite(id);
+
   return (
     <button
       type="button"
       onClick={(e) => {
         e.stopPropagation();
-        setActive((v) => !v);
+        toggleFavorite(id);
       }}
-      className="heart-btn transition-transform active:scale-95"
+      className="heart-btn transition-transform active:scale-95 cursor-pointer"
       data-active={active}
       aria-label={active ? `Bỏ yêu thích ${name}` : `Yêu thích ${name}`}
       aria-pressed={active}

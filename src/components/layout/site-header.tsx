@@ -9,9 +9,18 @@ import { useIsMac } from "@/hooks/use-is-mac";
 interface SiteHeaderProps {
   showBack?: boolean;
   subtitle?: string;
+  showFavoritesOnly?: boolean;
+  onFavoritesToggle?: () => void;
+  favoritesCount?: number;
 }
 
-export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
+export function SiteHeader({
+  showBack = false,
+  subtitle,
+  showFavoritesOnly = false,
+  onFavoritesToggle,
+  favoritesCount = 0,
+}: SiteHeaderProps) {
   const isMac = useIsMac();
   const [displayName, setDisplayName] = useState("Sale Agent");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -141,16 +150,17 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
               />
             </svg>
           </IconButton>
-          <div className="hidden sm:inline-flex">
+          <div className="relative inline-flex">
             <IconButton
               ariaLabel="Yêu thích"
-              onClick={() => stubAction("Căn yêu thích")}
+              onClick={onFavoritesToggle || (() => stubAction("Căn yêu thích"))}
             >
               <svg
                 width="18"
                 height="18"
                 viewBox="0 0 20 20"
-                fill="none"
+                fill={showFavoritesOnly ? "currentColor" : "none"}
+                className={showFavoritesOnly ? "text-rose-500" : "text-neutral-600"}
                 aria-hidden
               >
                 <path
@@ -161,6 +171,11 @@ export function SiteHeader({ showBack = false, subtitle }: SiteHeaderProps) {
                 />
               </svg>
             </IconButton>
+            {favoritesCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-sm ring-2 ring-white pointer-events-none">
+                {favoritesCount}
+              </span>
+            )}
           </div>
 
           {isLoggedIn ? (

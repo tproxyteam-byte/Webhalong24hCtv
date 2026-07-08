@@ -14,25 +14,19 @@ interface ShareButtonProps {
  * TODO: set env `NEXT_PUBLIC_CUSTOMER_SITE_URL=https://webhalong24h.com` lúc deploy.
  */
 const CUSTOMER_SITE_URL =
-  process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL ?? "https://webhalong24h.com";
+  process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL ?? "https://preview.halong24h.com";
 
 export function ShareButton({ slug, name }: ShareButtonProps) {
   const handleClick = async () => {
     if (typeof window === "undefined") return;
-    const url = `${CUSTOMER_SITE_URL}/property/${slug}`;
-    const text = `${name}\n${url}`;
-
+    const url = `${CUSTOMER_SITE_URL}/${slug}`;
     try {
-      if (navigator.share) {
-        await navigator.share({ title: name, url, text });
-        return;
-      }
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(url);
       toast("Đã sao chép link gửi khách", {
         description: url,
       });
-    } catch {
-      // user cancelled — no-op
+    } catch (err) {
+      console.error(err);
     }
   };
 

@@ -94,7 +94,7 @@ export function OwnerBanner({ owner }: OwnerBannerProps) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 5.58 2 10c0 2.22 1.08 4.23 2.87 5.67L4 19.5c-.13.38.22.73.58.58l3.92-1.63c1.09.35 2.27.55 3.5.55 5.52 0 10-3.58 10-8s-4.48-8-10-8zm1 11h-2v-2h2v2zm0-4h-2V7h2v2z" />
                 </svg>
-                Zalo Gọi điện
+                Nhắn tin Zalo
               </a>
 
               {/* Call Phone Button */}

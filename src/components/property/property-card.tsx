@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { Property } from "@/lib/types";
 import { formatVND } from "@/lib/format";
+import { useFavorites } from "@/hooks/use-favorites";
 
 interface PropertyCardProps {
   property: Property;
@@ -15,8 +18,16 @@ export function PropertyCard({
   minCtvPrice,
   availableNights,
 }: PropertyCardProps) {
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const isFav = isFavorite(property.id);
   const cover = property.images[0];
   const hasAvail = availableNights > 0;
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(property.id);
+  };
 
   return (
     <Link
@@ -24,6 +35,26 @@ export function PropertyCard({
       className="group block overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:border-teal-200 hover:shadow-[0_12px_24px_-4px_rgba(13,148,136,0.06)]"
     >
       <div className="relative ar-43 w-full overflow-hidden bg-neutral-100">
+        <div className="absolute right-3 top-3 z-10">
+          <button
+            type="button"
+            onClick={handleFavoriteClick}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-rose-500 backdrop-blur-md shadow-sm transition-all hover:bg-white hover:scale-105 active:scale-95 cursor-pointer"
+            aria-label={isFav ? "Bỏ yêu thích" : "Yêu thích"}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 20 20"
+              fill={isFav ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path d="M10 17s-6.5-3.6-6.5-8.2A3.3 3.3 0 0 1 10 6a3.3 3.3 0 0 1 6.5 2.8C16.5 13.4 10 17 10 17z" />
+            </svg>
+          </button>
+        </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={cover}

@@ -12,12 +12,14 @@ import { getPropertyDetail } from "@/lib/api";
 import { countAvailableNights, minCtvPriceNext30Days } from "@/lib/calendar";
 import { formatVND, relativeTime, todayISO } from "@/lib/format";
 import type { Property } from "@/lib/types";
+import { useFavorites } from "@/hooks/use-favorites";
 
 interface PropertyClientViewProps {
   slug: string;
 }
 
 export function PropertyClientView({ slug }: PropertyClientViewProps) {
+  const { favorites } = useFavorites();
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -58,7 +60,14 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
   if (isLoading) {
     return (
       <>
-        <SiteHeader showBack subtitle="Đang tải..." />
+        <SiteHeader
+          showBack
+          subtitle="Đang tải..."
+          favoritesCount={favorites.length}
+          onFavoritesToggle={() => {
+            window.location.href = "/calendar/properties?favorites=true";
+          }}
+        />
         <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-12 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[50vh]">
           <div className="flex flex-col items-center gap-4">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-teal-600"></div>
@@ -82,7 +91,14 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
 
   return (
     <>
-      <SiteHeader showBack subtitle={property.name} />
+      <SiteHeader
+        showBack
+        subtitle={property.name}
+        favoritesCount={favorites.length}
+        onFavoritesToggle={() => {
+          window.location.href = "/calendar/properties?favorites=true";
+        }}
+      />
       <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-xs text-neutral-500 font-medium">
@@ -224,7 +240,7 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 5.58 2 10c0 2.22 1.08 4.23 2.87 5.67L4 19.5c-.13.38.22.73.58.58l3.92-1.63c1.09.35 2.27.55 3.5.55 5.52 0 10-3.58 10-8s-4.48-8-10-8zm1 11h-2v-2h2v2zm0-4h-2V7h2v2z" />
                       </svg>
-                      Zalo Gọi điện
+                      Nhắn tin Zalo
                     </a>
                     <a
                       href={`tel:${property.ownerPhone}`}

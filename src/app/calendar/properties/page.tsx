@@ -3,7 +3,7 @@ import { PropertiesClientView } from "./properties-client-view";
 export const dynamic = "force-dynamic";
 
 interface CalendarPropertiesPageProps {
-  searchParams: Promise<{ ownerId?: string }>;
+  searchParams: Promise<{ ownerId?: string; favorites?: string }>;
 }
 
 export default async function CalendarPropertiesPage({ searchParams }: CalendarPropertiesPageProps) {

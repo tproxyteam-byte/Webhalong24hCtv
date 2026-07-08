@@ -8,13 +8,23 @@ import { HomeView } from "@/components/home/home-view";
 import { OwnerBanner } from "@/components/owner/owner-banner";
 import { getProperties } from "@/lib/api";
 import { addDays, todayISO } from "@/lib/format";
+import { useFavorites } from "@/hooks/use-favorites";
 import type { Property } from "@/lib/types";
 
 interface PropertiesClientViewProps {
-  searchParams: { ownerId?: string };
+  searchParams: { ownerId?: string; favorites?: string };
 }
 
 export function PropertiesClientView({ searchParams }: PropertiesClientViewProps) {
+  const { favorites } = useFavorites();
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(
+    searchParams.favorites === "true"
+  );
+
+  useEffect(() => {
+    setShowFavoritesOnly(searchParams.favorites === "true");
+  }, [searchParams.favorites]);
+
   const ownerId = searchParams.ownerId;
   const [properties, setProperties] = useState<Property[]>([]);
   const [owner, setOwner] = useState<any>(null);
@@ -126,15 +136,23 @@ export function PropertiesClientView({ searchParams }: PropertiesClientViewProps
     );
   }
 
+  const displayedProperties = showFavoritesOnly
+    ? properties.filter((p) => favorites.includes(p.id))
+    : properties;
+
   const areas = Array.from(new Set(properties.map((p) => p.area))).sort();
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader
+        showFavoritesOnly={showFavoritesOnly}
+        onFavoritesToggle={() => setShowFavoritesOnly(!showFavoritesOnly)}
+        favoritesCount={favorites.length}
+      />
       <main className="mx-auto w-full max-w-[1800px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 flex flex-col gap-6">
         {owner && <OwnerBanner owner={owner} />}
         <HomeView
-          properties={properties}
+          properties={displayedProperties}
           areas={areas}
           today={today}
           updatedLabel={updatedLabel}
