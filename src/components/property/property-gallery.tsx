@@ -24,8 +24,47 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
     }
   };
 
-  const [hero, ...rest] = images;
-  const sideImages = rest.slice(0, 4);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    if (e.button !== 0) return; // Only left click
+
+    isDragging.current = true;
+    container.classList.remove("snap-x", "snap-mandatory");
+    container.style.scrollBehavior = "auto";
+    container.style.cursor = "grabbing";
+    startX.current = e.pageX - container.offsetLeft;
+    scrollLeftStart.current = container.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const container = scrollContainerRef.current;
+    const x = e.pageX - container.offsetLeft;
+    const walk = x - startX.current;
+    container.scrollLeft = scrollLeftStart.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    if (!isDragging.current || !scrollContainerRef.current) return;
+    isDragging.current = false;
+    const container = scrollContainerRef.current;
+    container.style.cursor = "";
+    container.style.scrollBehavior = "smooth";
+    container.classList.add("snap-x", "snap-mandatory");
+    
+    const width = container.clientWidth;
+    if (width > 0) {
+      const idx = Math.round(container.scrollLeft / width);
+      const clampedIdx = Math.max(0, Math.min(images.length - 1, idx));
+      navigateTo(clampedIdx);
+    }
+  };
 
   // Lock body scroll when lightbox is open
   useEffect(() => {
@@ -106,39 +145,188 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
     }
   };
 
-  return (
-    <>
-      {/* Desktop view (Grid Layout) */}
-      <div className="hidden sm:grid grid-cols-4 grid-rows-2 gap-3">
+  if (!images || images.length === 0) {
+    return (
+      <div className="w-full aspect-[2/1] rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 font-semibold">
+        Không có hình ảnh
+      </div>
+    );
+  }
+
+  const renderDesktopGrid = () => {
+    const totalCount = images.length;
+
+    if (totalCount === 1) {
+      return (
         <div 
           onClick={() => openLightbox(0)}
-          className="relative overflow-hidden rounded-2xl bg-cream-100 col-span-2 row-span-2 aspect-[4/3] ar-43 cursor-pointer group"
+          className="relative w-full h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px] overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={hero}
+            src={images[0]}
             alt={alt}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="eager"
           />
           <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
-        {sideImages.map((src, idx) => (
-          <div
-            key={idx}
-            onClick={() => openLightbox(idx + 1)}
-            className="relative overflow-hidden rounded-xl bg-cream-100 cursor-pointer group"
+      );
+    }
+
+    if (totalCount === 2) {
+      return (
+        <div className="grid grid-cols-2 gap-3 h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px]">
+          {images.map((src, idx) => (
+            <div 
+              key={idx}
+              onClick={() => openLightbox(idx)}
+              className="relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group h-full"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`${alt} — ảnh ${idx + 1}`}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="eager"
+              />
+              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (totalCount === 3) {
+      return (
+        <div className="grid grid-cols-3 grid-rows-2 gap-3 h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px]">
+          <div 
+            onClick={() => openLightbox(0)}
+            className="relative overflow-hidden rounded-2xl bg-cream-100 col-span-2 row-span-2 cursor-pointer group h-full"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={src}
-              alt={`${alt} — ảnh ${idx + 2}`}
+              src={images[0]}
+              alt={alt}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
+              loading="eager"
             />
             <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
-        ))}
+          {images.slice(1, 3).map((src, idx) => (
+            <div
+              key={idx}
+              onClick={() => openLightbox(idx + 1)}
+              className="relative overflow-hidden rounded-xl bg-cream-100 cursor-pointer group h-full"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`${alt} — ảnh ${idx + 2}`}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (totalCount === 4) {
+      return (
+        <div className="grid grid-cols-2 grid-rows-2 gap-3 h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px]">
+          {images.map((src, idx) => (
+            <div 
+              key={idx}
+              onClick={() => openLightbox(idx)}
+              className="relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group h-full"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`${alt} — ảnh ${idx + 1}`}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="eager"
+              />
+              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // 5 or more images
+    const heroImage = images[0];
+    const sideImages = images.slice(1, 5);
+    const hasMore = totalCount > 5;
+
+    return (
+      <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px]">
+        <div 
+          onClick={() => openLightbox(0)}
+          className="relative overflow-hidden rounded-2xl bg-cream-100 col-span-2 row-span-2 cursor-pointer group h-full"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={heroImage}
+            alt={alt}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </div>
+        {sideImages.map((src, idx) => {
+          const isLast = idx === 3;
+          return (
+            <div
+              key={idx}
+              onClick={() => openLightbox(idx + 1)}
+              className="relative overflow-hidden rounded-xl bg-cream-100 cursor-pointer group h-full"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`${alt} — ảnh ${idx + 2}`}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+              {isLast && hasMore ? (
+                <div className="absolute inset-0 bg-black/50 hover:bg-black/60 transition-colors flex flex-col items-center justify-center text-white font-bold select-none">
+                  <span className="text-lg md:text-xl font-extrabold">+{totalCount - 4}</span>
+                  <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-neutral-200 mt-1">ảnh khác</span>
+                </div>
+              ) : (
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {/* Desktop view (Grid Layout) */}
+      <div className="hidden sm:block relative">
+        {renderDesktopGrid()}
+        
+        {/* Floating View All Button */}
+        {images.length > 1 && (
+          <button
+            onClick={() => openLightbox(0)}
+            className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 bg-white hover:bg-neutral-50 active:scale-95 transition-all text-neutral-800 text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md border border-neutral-200/80 cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+            <span>Xem tất cả {images.length} ảnh</span>
+          </button>
+        )}
       </div>
 
       {/* Mobile view (Horizontal swipeable carousel of all images) */}
@@ -208,20 +396,25 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
             {/* Horizontal Scroll Area */}
             <div 
               ref={scrollContainerRef}
-              className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none"
+              className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none select-none cursor-grab"
               onScroll={handleLightboxScroll}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUpOrLeave}
+              onMouseLeave={handleMouseUpOrLeave}
             >
               {images.map((src, idx) => (
                 <div 
                   key={idx}
-                  className="w-full h-full flex-shrink-0 snap-start snap-always flex items-center justify-center p-4 md:p-12"
+                  className="w-full h-full flex-shrink-0 snap-start snap-always flex items-center justify-center p-4 md:p-12 select-none"
                 >
-                  <div className="relative max-w-full max-h-[70vh] md:max-h-[75vh] flex items-center justify-center overflow-hidden">
+                  <div className="relative max-w-full max-h-[70vh] md:max-h-[75vh] flex items-center justify-center overflow-hidden select-none">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={src}
                       alt={`${alt} - phóng to ${idx + 1}`}
-                      className="max-w-full max-h-[70vh] md:max-h-[75vh] object-contain rounded-md shadow-2xl select-none"
+                      className="max-w-full max-h-[70vh] md:max-h-[75vh] object-contain rounded-md shadow-2xl select-none pointer-events-none"
+                      draggable="false"
                     />
                   </div>
                 </div>
