@@ -228,7 +228,7 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
               </dl>
 
               <div className="flex flex-col gap-2.5">
-                <ShareButton slug={property.slug} name={property.name} />
+                <ShareButton propertyId={property.id} name={property.name} />
                 {property.ownerPhone ? (
                   <>
                     <a

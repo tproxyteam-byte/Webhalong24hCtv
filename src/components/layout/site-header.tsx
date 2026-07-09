@@ -83,17 +83,25 @@ export function SiteHeader({
     <>
     <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/80 backdrop-blur-md shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
       <div className="mx-auto flex h-16 max-w-[1800px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-1.5 group">
+        <Link href="/" className="flex shrink-0 items-center gap-2 group">
           {showBack && (
             <span aria-hidden className="mr-1 text-neutral-500 transition-transform group-hover:-translate-x-0.5">
               ←
             </span>
           )}
-          <span className="rounded-md bg-gradient-to-r from-teal-600 to-teal-700 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm">
-            Sale
-          </span>
+          <img
+            src="/images/logo.png"
+            alt="Halong24h Logo"
+            className="h-9 w-9 object-contain transition-transform group-hover:scale-105"
+          />
+          <div className="flex flex-col justify-center leading-none">
+            <span className="text-xs font-black tracking-tight text-neutral-800 sm:text-sm">
+              HALONG24H
+            </span>
+            
+          </div>
           {subtitle && (
-            <span className="ml-3 hidden max-w-[200px] truncate text-sm font-medium text-neutral-400 lg:inline">
+            <span className="ml-2 hidden max-w-[200px] truncate text-sm font-medium text-neutral-400 lg:inline">
               · {subtitle}
             </span>
           )}

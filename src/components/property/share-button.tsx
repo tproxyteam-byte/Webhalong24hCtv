@@ -3,7 +3,7 @@
 import { toast } from "sonner";
 
 interface ShareButtonProps {
-  slug: string;
+  propertyId: string;
   name: string;
 }
 
@@ -16,10 +16,10 @@ interface ShareButtonProps {
 const CUSTOMER_SITE_URL =
   process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL ?? "https://preview.halong24h.com";
 
-export function ShareButton({ slug, name }: ShareButtonProps) {
+export function ShareButton({ propertyId, name }: ShareButtonProps) {
   const handleClick = async () => {
     if (typeof window === "undefined") return;
-    const url = `${CUSTOMER_SITE_URL}/properties/public/${slug}`;
+    const url = `${CUSTOMER_SITE_URL}/${propertyId}`;
     try {
       await navigator.clipboard.writeText(url);
       toast("Đã sao chép link gửi khách", {
