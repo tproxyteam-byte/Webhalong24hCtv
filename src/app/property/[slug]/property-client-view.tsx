@@ -65,6 +65,124 @@ export function PropertyClientView({
     };
   }, [slug, propertyId]);
 
+  useEffect(() => {
+    let active = true;
+    let mapInstance: any = null;
+
+    const prop = property;
+    if (!prop) return;
+
+    async function initMap(p: Property) {
+      // 1. Dynamic inject Leaflet CSS in document head
+      if (!document.getElementById("leaflet-css")) {
+        const link = document.createElement("link");
+        link.id = "leaflet-css";
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+      }
+
+      // 2. Dynamic import Leaflet client-side
+      const L = await import("leaflet");
+      if (!active) return;
+
+      let lat = p.latitude;
+      let lng = p.longitude;
+
+      // 3. Fallback to geocoding if lat/lng are missing
+      if (!lat || !lng) {
+        // First try to parse mapLink if it is a desktop Google Maps URL
+        let parsedLat: number | null = null;
+        let parsedLng: number | null = null;
+        if (p.mapLink) {
+          const coordMatch = p.mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+          if (coordMatch && coordMatch[1] && coordMatch[2]) {
+            parsedLat = parseFloat(coordMatch[1]);
+            parsedLng = parseFloat(coordMatch[2]);
+          }
+        }
+
+        if (parsedLat && parsedLng) {
+          lat = parsedLat;
+          lng = parsedLng;
+        } else {
+          try {
+            // Clean house/street numbers to help Nominatim locate the street/area
+            const query = p.address.replace(/[\d/]+,\s*/, "");
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
+            );
+            const data = await res.json();
+            if (data && data.length > 0 && active) {
+              lat = parseFloat(data[0].lat);
+              lng = parseFloat(data[0].lon);
+            }
+          } catch (err) {
+            console.error("Geocoding failed:", err);
+          }
+        }
+      }
+
+      // Final fallback to central Hạ Long if completely missing
+      if (!lat || !lng) {
+        lat = 20.956227;
+        lng = 106.9985531;
+      }
+
+      const mapContainer = document.getElementById("leaflet-map-container");
+      if (!mapContainer) return;
+
+      // Clear existing map instance if already initialized on this DOM element
+      const containerWithMap = mapContainer as any;
+      if (containerWithMap._leaflet_id) {
+        return;
+      }
+
+      mapInstance = L.map("leaflet-map-container", {
+        zoomControl: true,
+      }).setView([lat, lng], 15);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(mapInstance);
+
+      // Custom red marker icon using L.divIcon to guarantee red color rendering
+      const customIcon = L.divIcon({
+        className: "bg-transparent border-0",
+        html: `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ef4444" width="32" height="32">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32],
+      });
+
+      const marker = L.marker([lat, lng], { icon: customIcon }).addTo(mapInstance);
+
+      // Clean up spaces before commas in the address to make it look neat and professional
+      const cleanAddress = p.address.replace(/\s+,\s*/g, ", ").trim();
+
+      const popupContent = `
+        <div style="font-family: sans-serif; padding: 2px; line-height: 1.5; min-width: 180px;">
+          <h4 style="margin: 0 0 4px 0; font-size: 13.5px; font-weight: 700; color: #1e293b;">${p.name}</h4>
+          <p style="margin: 0; font-size: 11.5px; color: #475569; font-weight: 500;">${cleanAddress}</p>
+        </div>
+      `;
+      marker.bindPopup(popupContent, { minWidth: 200, maxWidth: 300 }).openPopup();
+    }
+
+    initMap(prop);
+
+    return () => {
+      active = false;
+      if (mapInstance) {
+        mapInstance.remove();
+      }
+    };
+  }, [property]);
+
   const backHref = from === "zalo" && activeOwnerId
     ? `/zalo-cal/${activeOwnerId}`
     : activeOwnerId
@@ -148,6 +266,7 @@ export function PropertyClientView({
   const factor = 1 - property.pricing.ctvDiscount;
   const ctvWeekday = Math.round(property.pricing.weekday * factor);
   const ctvWeekend = Math.round(property.pricing.weekend * factor);
+
 
   return (
     <>
@@ -243,6 +362,18 @@ export function PropertyClientView({
                   </li>
                 ))}
               </ul>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-bold text-neutral-800 uppercase tracking-wider text-teal-700">09 · VỊ TRÍ</h2>
+              <p className="mt-2 text-sm font-medium text-neutral-600 leading-relaxed">
+                {property.address}
+              </p>
+
+              {/* Leaflet map container */}
+              <div className="relative mt-4 w-full h-[350px] rounded-2xl overflow-hidden shadow-sm border border-neutral-200/60 z-0">
+                <div id="leaflet-map-container" className="w-full h-full" />
+              </div>
             </section>
 
             <section>
