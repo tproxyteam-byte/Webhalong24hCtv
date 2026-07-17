@@ -104,7 +104,7 @@ export function PropertyCard({
             <p className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
               Giá CTV từ
             </p>
-            <p className="text-base font-bold text-teal-800 tnum">
+            <p className="text-base font-extrabold text-teal-700 tnum">
               {formatVND(minCtvPrice)}
             </p>
           </div>

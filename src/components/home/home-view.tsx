@@ -18,6 +18,7 @@ import { ViewToggle, type ViewMode } from "./view-toggle";
 import { AvailabilityMatrix } from "./availability-matrix";
 import { MatrixDatePicker } from "./matrix-date-picker";
 import { CardView } from "./card-view";
+import { addDays, nightsBetween } from "@/lib/format";
 
 interface HomeViewProps {
   properties: Property[];
@@ -148,7 +149,8 @@ export function HomeView({ properties, areas, today, updatedLabel }: HomeViewPro
   };
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [sort, setSort] = useState<SortKey>("default");
-  const [matrixStart, setMatrixStart] = useState<string>(today);
+  const [matrixStart, setMatrixStart] = useState<string>(() => addDays(today, -7));
+  const [matrixEnd, setMatrixEnd] = useState<string>(() => addDays(today, 29));
 
   const filtered = useMemo(
     () => filterProperties(properties, filters, today),
@@ -158,6 +160,17 @@ export function HomeView({ properties, areas, today, updatedLabel }: HomeViewPro
     () => sortProperties(filtered, sort, today),
     [filtered, sort, today],
   );
+
+  const handleMatrixStartChange = (newStart: string) => {
+    setMatrixStart(newStart);
+    if (newStart > matrixEnd) {
+      setMatrixEnd(addDays(newStart, 29));
+    }
+  };
+
+  const daysToShow = useMemo(() => {
+    return nightsBetween(matrixStart, matrixEnd) + 1;
+  }, [matrixStart, matrixEnd]);
 
   const dirty = isFiltersDirty(filters);
 
@@ -181,11 +194,19 @@ export function HomeView({ properties, areas, today, updatedLabel }: HomeViewPro
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <MatrixDatePicker
+            labelPrefix="Từ"
             value={matrixStart}
             today={today}
-            onChange={setMatrixStart}
+            onChange={handleMatrixStartChange}
+          />
+          <MatrixDatePicker
+            labelPrefix="Đến"
+            value={matrixEnd}
+            today={today}
+            minDate={matrixStart}
+            onChange={setMatrixEnd}
           />
           <SortMenu value={sort} onChange={setSort} />
           <ViewToggle value={view} onChange={setView} />
@@ -204,6 +225,7 @@ export function HomeView({ properties, areas, today, updatedLabel }: HomeViewPro
           properties={sorted}
           today={today}
           startDate={matrixStart}
+          days={daysToShow}
         />
       ) : (
         <CardView properties={sorted} today={today} />

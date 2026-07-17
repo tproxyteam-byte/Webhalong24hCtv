@@ -45,7 +45,7 @@ function buildDays(startIso: string, count: number, todayIso: string): DayInfo[]
       day: d.getDate(),
       dow,
       isWeekend: dow === 5 || dow === 6,
-      isMonthStart: d.getDate() === 1 || i === 0,
+      isMonthStart: d.getDate() === 1,
       isPast: iso < todayIso,
       isToday: iso === todayIso,
     });
@@ -85,34 +85,49 @@ export function AvailabilityMatrix({
   startDate,
   days = 30,
 }: AvailabilityMatrixProps) {
-  const dayInfos = buildDays(startDate, days, today);
+  // Shift the actual rendering start date back by 7 days to allow backward scrolling
+  const renderStartDate = addDays(startDate, -7);
+  const renderDays = days + 7;
+  const dayInfos = buildDays(renderStartDate, renderDays, today);
   const months = groupByMonth(dayInfos);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, scrollLeft: 0 });
 
+  const getStartScrollLeft = () => {
+    if (!scrollRef.current) return 0;
+    const startCell = scrollRef.current.querySelector('[data-start-date="true"]') as HTMLElement;
+    if (!startCell) return 0;
+    const stickyCol = scrollRef.current.querySelector('.sticky.left-0') as HTMLElement;
+    const stickyWidth = stickyCol ? stickyCol.offsetWidth : 0;
+    return Math.max(0, startCell.offsetLeft - stickyWidth);
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.style.scrollBehavior = "auto";
-      scrollRef.current.scrollLeft = 0;
-    }
+    const timerInit = setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.style.scrollBehavior = "auto";
+        scrollRef.current.scrollLeft = getStartScrollLeft();
+      }
+    }, 0);
 
     // Perform a subtle scroll bounce animation to show scrollability
     const timer1 = setTimeout(() => {
       if (scrollRef.current) {
         scrollRef.current.style.scrollBehavior = "smooth";
-        scrollRef.current.scrollLeft = 60; // scroll right
+        scrollRef.current.scrollLeft = getStartScrollLeft() + 60; // scroll right
       }
     }, 450);
 
     const timer2 = setTimeout(() => {
       if (scrollRef.current) {
-        scrollRef.current.scrollLeft = 0; // scroll back
+        scrollRef.current.scrollLeft = getStartScrollLeft(); // scroll back
       }
     }, 1150);
 
     return () => {
+      clearTimeout(timerInit);
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
@@ -120,7 +135,10 @@ export function AvailabilityMatrix({
 
   useEffect(() => {
     const onJump = () => {
-      if (scrollRef.current) scrollRef.current.scrollLeft = 0;
+      if (scrollRef.current) {
+        scrollRef.current.style.scrollBehavior = "smooth";
+        scrollRef.current.scrollLeft = getStartScrollLeft();
+      }
     };
     window.addEventListener(MATRIX_JUMP_TODAY_EVENT, onJump);
     return () => window.removeEventListener(MATRIX_JUMP_TODAY_EVENT, onJump);
@@ -189,7 +207,7 @@ export function AvailabilityMatrix({
                 key={idx}
                 className={
                   "flex shrink-0 items-end pb-1.5 " +
-                  (idx > 0 ? "border-l border-l-neutral-200" : "")
+                  (idx > 0 ? "border-l-2 border-l-neutral-800" : "")
                 }
                 style={{ width: `calc(var(--cell-w) * ${g.span})` }}
               >
@@ -199,7 +217,7 @@ export function AvailabilityMatrix({
               </div>
             ))}
             <div className="hidden sm:flex sticky right-0 z-20 w-[var(--price-w)] shrink-0 items-end justify-center border-l border-neutral-200 bg-neutral-50 pb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-800">
                 Giá CTV / đêm
               </span>
             </div>
@@ -219,12 +237,12 @@ export function AvailabilityMatrix({
               </span>
             </div>
             {dayInfos.map((d) => (
-              <DayHeader key={d.iso} info={d} />
+              <DayHeader key={d.iso} info={d} isSelectedStart={d.iso === startDate} />
             ))}
             <div className="hidden sm:flex sticky right-0 z-20 w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-neutral-50">
-              <PriceColHeader label="Thường" />
-              <PriceColHeader label="T6, T7" />
-              <PriceColHeader label="Lễ" />
+              <PriceColHeader label="Thường" type="weekday" />
+              <PriceColHeader label="T6, T7" type="weekend" />
+              <PriceColHeader label="Lễ" type="holiday" />
             </div>
           </div>
 
@@ -271,13 +289,21 @@ function LegendItem({
   );
 }
 
-function DayHeader({ info }: { info: DayInfo }) {
+function DayHeader({
+  info,
+  isSelectedStart,
+}: {
+  info: DayInfo;
+  isSelectedStart: boolean;
+}) {
   if (info.isToday) {
     return (
       <div
+        data-today="true"
+        data-start-date={isSelectedStart ? "true" : undefined}
         className={
           "flex shrink-0 flex-col items-center justify-center bg-neutral-900 text-white " +
-          (info.isMonthStart ? "border-l border-l-neutral-200" : "")
+          (info.isMonthStart ? "border-l-2 border-l-neutral-800" : "")
         }
         style={{ width: "var(--cell-w)" }}
       >
@@ -293,11 +319,12 @@ function DayHeader({ info }: { info: DayInfo }) {
   const weekendTint = info.isWeekend ? "bg-[#ecfdf5]" : "";
   return (
     <div
+      data-start-date={isSelectedStart ? "true" : undefined}
       className={
         "flex shrink-0 flex-col items-center justify-center " +
         weekendTint +
         " " +
-        (info.isMonthStart ? "border-l border-l-neutral-200 " : "")
+        (info.isMonthStart ? "border-l-2 border-l-neutral-800 " : "")
       }
       style={{ width: "var(--cell-w)" }}
     >
@@ -374,10 +401,19 @@ function MatrixRow({
               {property.maxGuests}k
             </span>
           </p>
-          <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 sm:hidden">
-            {formatCompactVND(ctvWeekday)} / {formatCompactVND(ctvWeekend)}
-            {ctvHoliday ? ` / ${formatCompactVND(ctvHoliday)}` : ""}
-          </p>
+          <div className="mt-1 flex flex-wrap gap-1 sm:hidden">
+            <span className="inline-flex items-center rounded bg-slate-100 px-1 py-0.5 text-[9px] font-bold text-slate-800">
+              {formatCompactVND(ctvWeekday)}
+            </span>
+            <span className="inline-flex items-center rounded bg-teal-50 px-1 py-0.5 text-[9px] font-bold text-teal-700 border border-teal-100/50">
+              {formatCompactVND(ctvWeekend)}
+            </span>
+            {ctvHoliday && (
+              <span className="inline-flex items-center rounded bg-rose-50 px-1 py-0.5 text-[9px] font-bold text-rose-700 border border-rose-100/50">
+                {formatCompactVND(ctvHoliday)}
+              </span>
+            )}
+          </div>
         </div>
         <FavoriteButton id={property.id} name={property.name} />
       </div>
@@ -387,18 +423,22 @@ function MatrixRow({
       ))}
 
       <div className="hidden sm:flex sticky right-0 z-10 w-[var(--price-w)] shrink-0 border-l border-neutral-200 bg-white transition-colors group-hover/row:bg-accent-50">
-        <PriceCell value={ctvWeekday} bold />
-        <PriceCell value={ctvWeekend} />
-        <PriceCell value={ctvHoliday} />
+        <PriceCell value={ctvWeekday} type="weekday" />
+        <PriceCell value={ctvWeekend} type="weekend" />
+        <PriceCell value={ctvHoliday} type="holiday" />
       </div>
     </div>
   );
 }
 
 function DayCell({ info, property }: { info: DayInfo; property: Property }) {
+  const realStatus = dayStatus(info.iso, property.bookings);
   const status: CellStatus = info.isPast
-    ? "past"
-    : dayStatus(info.iso, property.bookings);
+    ? realStatus === "booked" || realStatus === "hold"
+      ? realStatus
+      : "past"
+    : realStatus;
+
   const label =
     status === "past"
       ? "đã qua"
@@ -412,13 +452,14 @@ function DayCell({ info, property }: { info: DayInfo; property: Property }) {
 
   return (
     <div
-      title={`${formatShortDate(info.iso)} — ${property.name}: ${label}`}
+      title={`${formatShortDate(info.iso)} — ${property.name}: ${label}${info.isPast ? " (đã qua)" : ""}`}
       data-status={status}
       data-weekend={info.isWeekend ? "true" : undefined}
       data-today={info.isToday ? "true" : undefined}
+      data-past={info.isPast ? "true" : undefined}
       className={
         "day-cell shrink-0 " +
-        (info.isMonthStart ? "border-l border-l-neutral-200" : "")
+        (info.isMonthStart ? "border-l-2 border-l-neutral-800" : "")
       }
       style={{ width: "var(--cell-w)" }}
     >
@@ -427,13 +468,25 @@ function DayCell({ info, property }: { info: DayInfo; property: Property }) {
   );
 }
 
-function PriceColHeader({ label }: { label: string }) {
+function PriceColHeader({
+  label,
+  type,
+}: {
+  label: string;
+  type: "weekday" | "weekend" | "holiday";
+}) {
+  let colorClass = "text-neutral-500";
+  if (type === "weekend") {
+    colorClass = "text-teal-700";
+  } else if (type === "holiday") {
+    colorClass = "text-rose-600";
+  }
   return (
     <div
       className="flex items-end justify-center border-l border-neutral-100 pb-1.5 first:border-l-0"
       style={{ width: "var(--price-col)" }}
     >
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+      <span className={`text-[10px] font-bold uppercase tracking-wider ${colorClass}`}>
         {label}
       </span>
     </div>
@@ -442,27 +495,29 @@ function PriceColHeader({ label }: { label: string }) {
 
 function PriceCell({
   value,
-  bold = false,
+  type,
 }: {
   value: number | null;
-  bold?: boolean;
+  type: "weekday" | "weekend" | "holiday";
 }) {
+  let colorClass = "";
+  if (type === "weekday") {
+    colorClass = "text-slate-900 font-bold text-[12.5px] sm:text-[13px]";
+  } else if (type === "weekend") {
+    colorClass = "text-teal-700 font-extrabold text-[12.5px] sm:text-[13px]";
+  } else if (type === "holiday") {
+    colorClass = "text-rose-600 font-extrabold text-[12.5px] sm:text-[13px]";
+  }
+
   return (
     <div
       className="flex items-center justify-center border-l border-neutral-100 px-1 py-2 first:border-l-0"
       style={{ width: "var(--price-col)" }}
     >
       {value !== null ? (
-        <span
-          className={
-            "tnum whitespace-nowrap text-center " +
-            (bold
-              ? "text-[12px] font-semibold text-neutral-900"
-              : "text-[11px] font-medium text-neutral-700")
-          }
-        >
+        <span className={`tnum whitespace-nowrap text-center ${colorClass}`}>
           {formatVNDPlain(value)}
-          <span className="ml-0.5 text-[9px] font-normal text-neutral-400">
+          <span className="ml-0.5 text-[9.5px] font-medium opacity-70">
             đ
           </span>
         </span>

@@ -8,6 +8,8 @@ interface MatrixDatePickerProps {
   value: string;
   today: string;
   onChange: (iso: string) => void;
+  labelPrefix?: string;
+  minDate?: string;
 }
 
 const DOW = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
@@ -16,6 +18,8 @@ export function MatrixDatePicker({
   value,
   today,
   onChange,
+  labelPrefix = "Từ",
+  minDate,
 }: MatrixDatePickerProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -42,11 +46,13 @@ export function MatrixDatePicker({
   }, [open]);
 
   const matrix = buildMonthMatrix(view.year, view.month);
-  const todayMonthIdx =
-    new Date(today + "T00:00:00").getFullYear() * 12 +
-    new Date(today + "T00:00:00").getMonth();
+  const limitDate = minDate;
+  const limitMonthIdx = limitDate
+    ? new Date(limitDate + "T00:00:00").getFullYear() * 12 +
+      new Date(limitDate + "T00:00:00").getMonth()
+    : null;
   const viewMonthIdx = view.year * 12 + view.month;
-  const canGoBack = viewMonthIdx > todayMonthIdx;
+  const canGoBack = limitMonthIdx !== null ? viewMonthIdx > limitMonthIdx : true;
 
   const goPrev = () => {
     if (!canGoBack) return;
@@ -61,8 +67,8 @@ export function MatrixDatePicker({
       return { year: d.getFullYear(), month: d.getMonth() };
     });
 
-  const isToday = value === today;
-  const buttonLabel = isToday ? "Hôm nay" : `Từ ${formatShortDate(value)}`;
+  const isToday = value === today && labelPrefix === "Từ";
+  const buttonLabel = isToday ? "Hôm nay" : `${labelPrefix} ${formatShortDate(value)}`;
 
   return (
     <div ref={ref} className="relative">
@@ -98,7 +104,7 @@ export function MatrixDatePicker({
       </button>
 
       {open && (
-        <div className="animate-popover absolute right-0 top-full z-40 mt-1.5 w-[296px] rounded-lg border border-neutral-200 bg-white p-3 shadow-[var(--shadow-pop)]">
+        <div className="animate-popover absolute left-0 sm:left-auto sm:right-0 top-full z-40 mt-1.5 w-[296px] rounded-lg border border-neutral-200 bg-white p-3 shadow-[var(--shadow-pop)]">
           {/* Month nav */}
           <div className="mb-2 flex items-center justify-between">
             <button
@@ -137,7 +143,8 @@ export function MatrixDatePicker({
             {matrix.weeks.flat().map((cell, idx) => {
               if (!cell.inMonth)
                 return <div key={idx} className="h-8" aria-hidden />;
-              const isPast = cell.iso < today;
+              const cellLimitDate = minDate;
+              const isPast = cellLimitDate ? cell.iso < cellLimitDate : false;
               const isSelected = cell.iso === value;
               const isCurrentDay = cell.iso === today;
               let cls =
@@ -169,7 +176,7 @@ export function MatrixDatePicker({
             })}
           </div>
 
-          {!isToday && (
+          {labelPrefix === "Từ" && !isToday && (
             <div className="mt-2 flex justify-end border-t border-neutral-100 pt-2">
               <button
                 type="button"

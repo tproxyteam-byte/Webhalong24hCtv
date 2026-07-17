@@ -35,6 +35,8 @@ export interface Property {
   /** Diện tích sàn (m²) */
   floorArea: number;
   maxGuests: number;
+  standardGuests?: number;
+  standardChildren?: number;
   amenities: string[];
   description: string;
   images: string[];
