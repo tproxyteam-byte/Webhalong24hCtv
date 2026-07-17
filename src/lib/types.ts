@@ -37,6 +37,9 @@ export interface Property {
   maxGuests: number;
   standardGuests?: number;
   standardChildren?: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  mapLink?: string | null;
   amenities: string[];
   description: string;
   images: string[];

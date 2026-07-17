@@ -5,6 +5,20 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { COMMAND_PALETTE_OPEN_EVENT } from "@/components/command-palette";
 import { useIsMac } from "@/hooks/use-is-mac";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useSyncExternalStore } from "react";
+
+function subscribeEmpty() {
+  return () => {};
+}
+
+function getIsClient() {
+  return typeof window !== "undefined";
+}
+
+function getServerIsClient() {
+  return false;
+}
 
 interface SiteHeaderProps {
   showBack?: boolean;
@@ -12,6 +26,8 @@ interface SiteHeaderProps {
   showFavoritesOnly?: boolean;
   onFavoritesToggle?: () => void;
   favoritesCount?: number;
+  ownerId?: string;
+  from?: string;
 }
 
 export function SiteHeader({
@@ -20,8 +36,13 @@ export function SiteHeader({
   showFavoritesOnly = false,
   onFavoritesToggle,
   favoritesCount = 0,
+  ownerId,
+  from,
 }: SiteHeaderProps) {
   const isMac = useIsMac();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isClient = useSyncExternalStore(subscribeEmpty, getIsClient, getServerIsClient);
   const [displayName, setDisplayName] = useState("Sale Agent");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -79,11 +100,40 @@ export function SiteHeader({
   const stubAction = (label: string) =>
     toast(label, { description: "Tính năng đang phát triển." });
 
+  let logoHref = "/";
+  let resolvedOwnerId = ownerId;
+  let resolvedFrom = from;
+
+  if (isClient) {
+    if (!resolvedOwnerId) {
+      resolvedOwnerId = searchParams.get("ownerId") || undefined;
+    }
+    if (!resolvedOwnerId && pathname.startsWith("/zalo-cal/")) {
+      resolvedOwnerId = pathname.split("/")[2];
+    }
+    if (!resolvedOwnerId) {
+      const match = document.cookie.match(/(?:^|; )lastOwnerId=([^;]*)/);
+      resolvedOwnerId = match ? match[1] : "e984db01-5eaf-478c-b066-c3fd47c522a2";
+    }
+
+    if (!resolvedFrom) {
+      resolvedFrom = searchParams.get("from") || undefined;
+    }
+  }
+
+  const isZalo = resolvedFrom === "zalo" || (isClient && pathname.startsWith("/zalo-cal"));
+
+  if (isZalo && resolvedOwnerId) {
+    logoHref = `/zalo-cal/${resolvedOwnerId}`;
+  } else {
+    logoHref = "/calendar/properties";
+  }
+
   return (
     <>
     <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/80 backdrop-blur-md shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
       <div className="mx-auto flex h-16 max-w-[1800px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2 group">
+        <Link href={logoHref} className="flex shrink-0 items-center gap-2 group">
           {showBack && (
             <span aria-hidden className="mr-1 text-neutral-500 transition-transform group-hover:-translate-x-0.5">
               ←

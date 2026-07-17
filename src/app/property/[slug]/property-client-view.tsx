@@ -16,9 +16,17 @@ import { useFavorites } from "@/hooks/use-favorites";
 
 interface PropertyClientViewProps {
   slug: string;
+  propertyId?: string;
+  activeOwnerId?: string;
+  from?: string;
 }
 
-export function PropertyClientView({ slug }: PropertyClientViewProps) {
+export function PropertyClientView({
+  slug,
+  propertyId,
+  activeOwnerId,
+  from,
+}: PropertyClientViewProps) {
   const { favorites } = useFavorites();
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +39,7 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
       setIsLoading(true);
       setIsError(false);
       try {
-        const detail = await getPropertyDetail(slug);
+        const detail = await getPropertyDetail(slug, propertyId);
         if (!active) return;
         if (!detail) {
           setIsError(true);
@@ -55,7 +63,13 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [slug, propertyId]);
+
+  const backHref = from === "zalo" && activeOwnerId
+    ? `/zalo-cal/${activeOwnerId}`
+    : activeOwnerId
+    ? `/calendar/properties?ownerId=${activeOwnerId}`
+    : "/";
 
   if (isLoading) {
     return (
@@ -67,6 +81,8 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
           onFavoritesToggle={() => {
             window.location.href = "/calendar/properties?favorites=true";
           }}
+          ownerId={activeOwnerId}
+          from={from}
         />
         <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-12 sm:px-6 lg:px-8 flex flex-col items-center justify-center min-h-[50vh]">
           <div className="flex flex-col items-center gap-4">
@@ -80,7 +96,51 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
   }
 
   if (isError || !property) {
-    notFound();
+    return (
+      <>
+        <SiteHeader
+          showBack
+          subtitle="Lỗi"
+          favoritesCount={favorites.length}
+          onFavoritesToggle={() => {
+            window.location.href = "/calendar/properties?favorites=true";
+          }}
+          ownerId={activeOwnerId}
+          from={from}
+        />
+        <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-12 sm:px-6 flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-red-500/10 bg-gradient-to-b from-red-500/5 to-transparent p-8 text-center shadow-lg relative">
+            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-red-400/10 blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-orange-400/10 blur-3xl" />
+
+            <div className="relative flex flex-col items-center gap-6">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 border border-red-200/50 text-red-600 shadow-sm">
+                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+
+              <div className="space-y-2.5">
+                <h1 className="text-xl font-bold tracking-tight text-neutral-800">
+                  Căn hộ không tồn tại
+                </h1>
+                <p className="text-sm font-semibold text-neutral-500 leading-relaxed">
+                  Liên kết không hợp lệ hoặc căn hộ đã bị xóa.
+                </p>
+              </div>
+
+              <Link
+                href={backHref}
+                className="mt-2 inline-flex items-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 text-xs font-bold shadow-md shadow-teal-500/10 active:scale-95 transition-all outline-none"
+              >
+                Quay lại danh sách
+              </Link>
+            </div>
+          </div>
+        </main>
+        <SiteFooter />
+      </>
+    );
   }
 
   const minPrice = minCtvPriceNext30Days(property.pricing, today);
@@ -98,11 +158,13 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
         onFavoritesToggle={() => {
           window.location.href = "/calendar/properties?favorites=true";
         }}
+        ownerId={activeOwnerId}
+        from={from}
       />
       <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-xs text-neutral-500 font-medium">
-          <Link href="/" className="transition-colors hover:text-teal-700">
+          <Link href="/calendar/properties" className="transition-colors hover:text-teal-700">
             Danh sách căn
           </Link>
           <span aria-hidden className="text-neutral-300">
@@ -116,6 +178,20 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
           <div className="min-w-0">
             <h1 className="text-2xl font-extrabold tracking-tight text-neutral-800 sm:text-3xl">{property.name}</h1>
             <p className="mt-1.5 text-sm font-medium text-neutral-500">{property.address}</p>
+            {property.mapLink && (
+              <a
+                href={property.mapLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors hover:underline select-none cursor-pointer outline-none"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.25" stroke="currentColor" className="w-3.5 h-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1115 0z" />
+                </svg>
+                Xem vị trí trên Google Maps
+              </a>
+            )}
           </div>
           <div className="shrink-0 sm:text-right">
             <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
@@ -170,17 +246,16 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
             </section>
 
             <section>
-              <div className="flex items-end justify-between gap-3 border-b border-neutral-100 pb-3">
-                <h2 className="text-lg font-bold text-neutral-800">Lịch trống 3 tháng tới</h2>
-                <p className="text-xs text-neutral-500 font-medium">
-                  Còn{" "}
-                  <span className="font-bold text-teal-700">{availNights}</span>{" "}
-                  đêm trống / 30 ngày
+              <div className="mb-4 flex flex-col gap-2 border-b border-neutral-200/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-neutral-900">Lịch trống 3 tháng tới</h2>
+                  <p className="mt-1 text-xs font-medium text-neutral-400">Cập nhật trực tiếp từ lịch chủ nhà</p>
+                </div>
+                <p className="w-fit rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-800 ring-1 ring-inset ring-teal-100">
+                  <span className="font-extrabold">{availNights}</span> đêm trống / 30 ngày
                 </p>
               </div>
-              <div className="mt-4">
-                <AvailabilityCalendar bookings={property.bookings} today={today} />
-              </div>
+              <AvailabilityCalendar bookings={property.bookings} today={today} />
             </section>
 
             {property.ownerNote && (
@@ -240,7 +315,7 @@ export function PropertyClientView({ slug }: PropertyClientViewProps) {
                 ) : (
                   <a
                     href="tel:0901234567"
-                    className="btn btn-primary w-full shadow-md shadow-teal-950/10 text-center"
+                    className="btn border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 w-full text-center flex items-center justify-center gap-2 py-2.5 font-bold rounded-xl transition-all active:scale-[0.98] outline-none"
                     aria-label={`Gọi chủ nhà ${property.ownerName}`}
                   >
                     Gọi {property.ownerName}
@@ -573,6 +648,119 @@ function getAmenityIcon(name: string) {
         <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.1" />
         <path d="M12 10a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3Z" />
         <path d="M12 13a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3Z" />
+      </>
+    );
+  }
+  if (n.includes("bbq") || n.includes("nuong ngoai troi") || n.includes("vi nuong")) {
+    return wrapper(
+      <>
+        <path d="M12 2v4" />
+        <path d="M8 2v4" />
+        <path d="M16 2v4" />
+        <path d="M4 10h16a1 1 0 0 1 1 1v2a8 8 0 0 1-16 0v-2a1 1 0 0 1 1-1Z" />
+        <path d="M6 18l-2 4" />
+        <path d="M18 18l2 4" />
+        <path d="M12 18v4" />
+      </>
+    );
+  }
+  if (n.includes("nuoc loc") || n.includes("nuoc uong") || n.includes("nuoc free") || n.includes("nuoc khoang")) {
+    return wrapper(
+      <>
+        <path d="M10 2h4v3h-4z" />
+        <path d="M6 9a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9z" />
+        <path d="M10 12h4" />
+      </>
+    );
+  }
+  if (n.includes("den suoi")) {
+    return wrapper(
+      <>
+        <path d="M3 5h18v4H3z" />
+        <path d="M7 13c.5 1 1.5 2 3 2s2.5-1 3-2 1.5-2 3-2 2.5 1 3 2" />
+        <path d="M7 18c.5 1 1.5 2 3 2s2.5-1 3-2 1.5-2 3-2 2.5 1 3 2" />
+      </>
+    );
+  }
+  if (n.includes("view bien") || n.includes("seaview")) {
+    return wrapper(
+      <>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M2 16c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" />
+        <path d="M2 20c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0" />
+      </>
+    );
+  }
+  if (n.includes("san thuong")) {
+    return wrapper(
+      <>
+        <path d="M2 22h20" />
+        <path d="M4 22V10h8V6h6v16" />
+        <path d="M14 6l4-4" />
+        <path d="M8 14h2" />
+        <path d="M8 18h2" />
+      </>
+    );
+  }
+  if (n.includes("ban la") || n.includes("ban ui")) {
+    return wrapper(
+      <>
+        <path d="M4 18h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6C12 7 9 10 7 13H4a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2z" />
+        <path d="M9 7V4a1 1 0 0 1 1-1h5" />
+      </>
+    );
+  }
+  if (n.includes("tu quan ao")) {
+    return wrapper(
+      <>
+        <rect x="4" y="2" width="16" height="20" rx="2" />
+        <line x1="12" y1="2" x2="12" y2="22" />
+        <circle cx="9" cy="12" r="1" />
+        <circle cx="15" cy="12" r="1" />
+      </>
+    );
+  }
+  if (n.includes("ket sat")) {
+    return wrapper(
+      <>
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 10v4" />
+        <path d="M10 12h4" />
+      </>
+    );
+  }
+  if (n.includes("bong ban")) {
+    return wrapper(
+      <>
+        <path d="M2 12h20" />
+        <path d="M12 9v6" />
+        <path d="M6 12v6" />
+        <path d="M18 12v6" />
+        <circle cx="8" cy="7" r="1.5" />
+        <circle cx="16" cy="7" r="1.5" />
+      </>
+    );
+  }
+  if (n.includes("xich du")) {
+    return wrapper(
+      <>
+        <path d="M4 2v20" />
+        <path d="M20 2v20" />
+        <path d="M4 2h16" />
+        <path d="M8 2v10h8V2" />
+        <path d="M6 15h12v2H6z" />
+      </>
+    );
+  }
+  if (n.includes("tre em") || n.includes("kids-area") || n.includes("khu vui choi")) {
+    return wrapper(
+      <>
+        <path d="M4 14V4h2v10" />
+        <path d="M3 8h4" />
+        <path d="M3 11h4" />
+        <path d="M6 6c3 0 6 3 9 7s4 7 7 7" />
+        <circle cx="5" cy="2" r="1.5" />
       </>
     );
   }

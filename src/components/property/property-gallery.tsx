@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface PropertyGalleryProps {
   images: string[];
@@ -11,9 +11,12 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [mobileIndex, setMobileIndex] = useState(0);
+  const [isDraggingActive, setIsDraggingActive] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const navigateTo = (index: number) => {
+  if (!images || images.length === 0) return null;
+
+  const navigateTo = useCallback((index: number) => {
     setCurrentIndex(index);
     if (scrollContainerRef.current) {
       const width = scrollContainerRef.current.clientWidth;
@@ -22,49 +25,7 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
         behavior: "smooth",
       });
     }
-  };
-
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeftStart = useRef(0);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!scrollContainerRef.current) return;
-    const container = scrollContainerRef.current;
-    if (e.button !== 0) return; // Only left click
-
-    isDragging.current = true;
-    container.classList.remove("snap-x", "snap-mandatory");
-    container.style.scrollBehavior = "auto";
-    container.style.cursor = "grabbing";
-    startX.current = e.pageX - container.offsetLeft;
-    scrollLeftStart.current = container.scrollLeft;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !scrollContainerRef.current) return;
-    e.preventDefault();
-    const container = scrollContainerRef.current;
-    const x = e.pageX - container.offsetLeft;
-    const walk = x - startX.current;
-    container.scrollLeft = scrollLeftStart.current - walk;
-  };
-
-  const handleMouseUpOrLeave = () => {
-    if (!isDragging.current || !scrollContainerRef.current) return;
-    isDragging.current = false;
-    const container = scrollContainerRef.current;
-    container.style.cursor = "";
-    container.style.scrollBehavior = "smooth";
-    container.classList.add("snap-x", "snap-mandatory");
-    
-    const width = container.clientWidth;
-    if (width > 0) {
-      const idx = Math.round(container.scrollLeft / width);
-      const clampedIdx = Math.max(0, Math.min(images.length - 1, idx));
-      navigateTo(clampedIdx);
-    }
-  };
+  }, []);
 
   // Lock body scroll when lightbox is open
   useEffect(() => {
@@ -96,6 +57,7 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
       
       requestAnimationFrame(scrollToActive);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Keyboard navigation
@@ -116,7 +78,7 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, currentIndex, images.length]);
+  }, [isOpen, currentIndex, images.length, navigateTo]);
 
   const openLightbox = (index: number) => {
     setCurrentIndex(index);
@@ -145,64 +107,62 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
     }
   };
 
-  if (!images || images.length === 0) {
-    return (
-      <div className="w-full aspect-[2/1] rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 font-semibold">
-        Không có hình ảnh
-      </div>
-    );
-  }
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
 
-  const renderDesktopGrid = () => {
-    const totalCount = images.length;
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    // Only drag with left click
+    if (e.button !== 0) return;
 
-    if (totalCount === 1) {
-      return (
-        <div 
-          onClick={() => openLightbox(0)}
-          className="relative w-full h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px] overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={images[0]}
-            alt={alt}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="eager"
-          />
-          <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-      );
+    isDragging.current = true;
+    setIsDraggingActive(true);
+    container.style.cursor = "grabbing";
+    container.style.userSelect = "none";
+    startX.current = e.pageX - container.offsetLeft;
+    scrollLeftStart.current = container.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    e.preventDefault();
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX.current) * 1.5; // multiplier for speed/sensitivity
+    container.scrollLeft = scrollLeftStart.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    setIsDraggingActive(false);
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    container.style.cursor = "grab";
+    container.style.removeProperty("user-select");
+
+    const scrollLeft = container.scrollLeft;
+    const width = container.clientWidth;
+    if (width > 0) {
+      const idx = Math.round(scrollLeft / width);
+      navigateTo(idx);
     }
+  };
 
-    if (totalCount === 2) {
-      return (
-        <div className="grid grid-cols-2 gap-3 h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px]">
-          {images.map((src, idx) => (
-            <div 
-              key={idx}
-              onClick={() => openLightbox(idx)}
-              className="relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group h-full"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt={`${alt} — ảnh ${idx + 1}`}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="eager"
-              />
-              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (totalCount === 3) {
-      return (
-        <div className="grid grid-cols-3 grid-rows-2 gap-3 h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px]">
+  return (
+    <>
+      {/* Desktop view (Dynamic Grid Layout based on image count) */}
+      <div className="hidden sm:block">
+        {images.length === 1 && (
           <div 
             onClick={() => openLightbox(0)}
-            className="relative overflow-hidden rounded-2xl bg-cream-100 col-span-2 row-span-2 cursor-pointer group h-full"
+            className="relative overflow-hidden rounded-2xl bg-cream-100 aspect-[21/9] cursor-pointer group"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -213,119 +173,154 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
             />
             <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
-          {images.slice(1, 3).map((src, idx) => (
-            <div
-              key={idx}
-              onClick={() => openLightbox(idx + 1)}
-              className="relative overflow-hidden rounded-xl bg-cream-100 cursor-pointer group h-full"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt={`${alt} — ảnh ${idx + 2}`}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </div>
-          ))}
-        </div>
-      );
-    }
+        )}
 
-    if (totalCount === 4) {
-      return (
-        <div className="grid grid-cols-2 grid-rows-2 gap-3 h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px]">
-          {images.map((src, idx) => (
-            <div 
-              key={idx}
-              onClick={() => openLightbox(idx)}
-              className="relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group h-full"
+        {images.length === 2 && (
+          <div className="grid grid-cols-2 gap-3 aspect-[21/9] w-full">
+            {images.map((src, idx) => (
+              <div
+                key={idx}
+                onClick={() => openLightbox(idx)}
+                className="relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`${alt} — ảnh ${idx + 1}`}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                />
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {images.length === 3 && (
+          <div className="grid grid-cols-3 gap-3 aspect-[21/9] w-full">
+            <div
+              onClick={() => openLightbox(0)}
+              className="col-span-2 relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={src}
-                alt={`${alt} — ảnh ${idx + 1}`}
+                src={images[0]}
+                alt={alt}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="eager"
               />
               <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
-          ))}
-        </div>
-      );
-    }
+            <div className="grid grid-rows-2 gap-3 col-span-1">
+              {images.slice(1, 3).map((src, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => openLightbox(idx + 1)}
+                  className="relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`${alt} — ảnh ${idx + 2}`}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-    // 5 or more images
-    const heroImage = images[0];
-    const sideImages = images.slice(1, 5);
-    const hasMore = totalCount > 5;
-
-    return (
-      <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[300px] sm:h-[400px] md:h-[450px] lg:h-[480px]">
-        <div 
-          onClick={() => openLightbox(0)}
-          className="relative overflow-hidden rounded-2xl bg-cream-100 col-span-2 row-span-2 cursor-pointer group h-full"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={heroImage}
-            alt={alt}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="eager"
-          />
-          <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        {sideImages.map((src, idx) => {
-          const isLast = idx === 3;
-          return (
+        {images.length === 4 && (
+          <div className="grid grid-cols-4 grid-rows-2 gap-3 aspect-[21/9] w-full">
             <div
-              key={idx}
-              onClick={() => openLightbox(idx + 1)}
-              className="relative overflow-hidden rounded-xl bg-cream-100 cursor-pointer group h-full"
+              onClick={() => openLightbox(0)}
+              className="col-span-2 row-span-2 relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={src}
-                alt={`${alt} — ảnh ${idx + 2}`}
+                src={images[0]}
+                alt={alt}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="eager"
+              />
+              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+            <div
+              onClick={() => openLightbox(1)}
+              className="col-span-2 row-span-1 relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={images[1]}
+                alt={`${alt} — ảnh 2`}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
               />
-              {isLast && hasMore ? (
-                <div className="absolute inset-0 bg-black/50 hover:bg-black/60 transition-colors flex flex-col items-center justify-center text-white font-bold select-none">
-                  <span className="text-lg md:text-xl font-extrabold">+{totalCount - 4}</span>
-                  <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-neutral-200 mt-1">ảnh khác</span>
-                </div>
-              ) : (
-                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              )}
+              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
-          );
-        })}
-      </div>
-    );
-  };
+            {images.slice(2, 4).map((src, idx) => (
+              <div
+                key={idx}
+                onClick={() => openLightbox(idx + 2)}
+                className="col-span-1 row-span-1 relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`${alt} — ảnh ${idx + 3}`}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            ))}
+          </div>
+        )}
 
-  return (
-    <>
-      {/* Desktop view (Grid Layout) */}
-      <div className="hidden sm:block relative">
-        {renderDesktopGrid()}
-        
-        {/* Floating View All Button */}
-        {images.length > 1 && (
-          <button
-            onClick={() => openLightbox(0)}
-            className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 bg-white hover:bg-neutral-50 active:scale-95 transition-all text-neutral-800 text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md border border-neutral-200/80 cursor-pointer"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-              <rect x="3" y="3" width="7" height="7" rx="1.5" />
-              <rect x="14" y="3" width="7" height="7" rx="1.5" />
-              <rect x="3" y="14" width="7" height="7" rx="1.5" />
-              <rect x="14" y="14" width="7" height="7" rx="1.5" />
-            </svg>
-            <span>Xem tất cả {images.length} ảnh</span>
-          </button>
+        {images.length >= 5 && (
+          <div className="grid grid-cols-4 grid-rows-2 gap-3 aspect-[21/9] w-full">
+            <div
+              onClick={() => openLightbox(0)}
+              className="col-span-2 row-span-2 relative overflow-hidden rounded-2xl bg-cream-100 cursor-pointer group"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={images[0]}
+                alt={alt}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="eager"
+              />
+              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+            {images.slice(1, 5).map((src, idx) => {
+              const isLast = idx === 3;
+              const hasMore = images.length > 5;
+              return (
+                <div
+                  key={idx}
+                  onClick={() => openLightbox(idx + 1)}
+                  className="relative overflow-hidden rounded-xl bg-cream-100 cursor-pointer group"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`${alt} — ảnh ${idx + 2}`}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  {isLast && hasMore ? (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white transition-all group-hover:bg-black/50 select-none">
+                      <span className="text-lg font-bold">+{images.length - 5} ảnh</span>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -396,7 +391,11 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
             {/* Horizontal Scroll Area */}
             <div 
               ref={scrollContainerRef}
-              className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none select-none cursor-grab"
+              className={`w-full h-full flex overflow-x-auto scrollbar-none ${
+                isDraggingActive 
+                  ? "cursor-grabbing select-none" 
+                  : "scroll-smooth snap-x snap-mandatory cursor-grab"
+              }`}
               onScroll={handleLightboxScroll}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -408,13 +407,13 @@ export function PropertyGallery({ images, alt }: PropertyGalleryProps) {
                   key={idx}
                   className="w-full h-full flex-shrink-0 snap-start snap-always flex items-center justify-center p-4 md:p-12 select-none"
                 >
-                  <div className="relative max-w-full max-h-[70vh] md:max-h-[75vh] flex items-center justify-center overflow-hidden select-none">
+                  <div className="relative max-w-full max-h-[70vh] md:max-h-[75vh] flex items-center justify-center overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={src}
                       alt={`${alt} - phóng to ${idx + 1}`}
                       className="max-w-full max-h-[70vh] md:max-h-[75vh] object-contain rounded-md shadow-2xl select-none pointer-events-none"
-                      draggable="false"
+                      draggable={false}
                     />
                   </div>
                 </div>

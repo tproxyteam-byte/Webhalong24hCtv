@@ -311,6 +311,9 @@ function buildProperty(p: ApiProperty, details: any, ownerName?: string): Proper
     maxGuests: details?.maxGuests !== undefined ? details.maxGuests : meta.maxGuests,
     standardGuests: details?.standardGuests,
     standardChildren: details?.standardChildren,
+    latitude: details?.latitude !== undefined ? details.latitude : null,
+    longitude: details?.longitude !== undefined ? details.longitude : null,
+    mapLink: details?.mapLink || null,
     amenities: mappedAmenities.length > 0 ? mappedAmenities : meta.amenities,
     description: details?.description || meta.description,
     images,
@@ -525,7 +528,8 @@ export async function getPropertiesByOwner(
 }
 
 export async function getPropertyDetail(
-  slug: string
+  slug: string,
+  requestedPropertyId?: string
 ): Promise<Property | null> {
   const today = todayISO();
   const start = today;
@@ -544,6 +548,8 @@ export async function getPropertyDetail(
       throw new Error(json.message || "Invalid API response");
     }
     const details = json.data;
+    const propertyId = requestedPropertyId || details.id;
+
     const gridRes = await fetch(
       `${API_URL}/calendar/public-grid?startDate=${start}&endDate=${end}`,
       {
@@ -555,7 +561,7 @@ export async function getPropertyDetail(
     }
     const gridJson = await gridRes.json();
     const gridProps: ApiProperty[] = gridJson.data?.properties || [];
-    const gridProp = findGridProperty(gridProps, details);
+    const gridProp = findGridProperty(gridProps, { id: propertyId, code: details.code });
 
     const bookings = gridProp ? getBookingsFromDays(gridProp.days) : [];
 
@@ -578,7 +584,7 @@ export async function getPropertyDetail(
     });
 
     return {
-      id: details.id,
+      id: propertyId,
       slug: details.slug,
       name: details.name,
       building: details.address || meta.building,
@@ -590,6 +596,9 @@ export async function getPropertyDetail(
       maxGuests: details.maxGuests !== undefined ? details.maxGuests : meta.maxGuests,
       standardGuests: details.standardGuests,
       standardChildren: details.standardChildren,
+      latitude: details.latitude !== undefined ? details.latitude : null,
+      longitude: details.longitude !== undefined ? details.longitude : null,
+      mapLink: details.mapLink || null,
       amenities: mappedAmenities.length > 0 ? mappedAmenities : meta.amenities,
       description: details.description || meta.description,
       images,
